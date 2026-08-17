@@ -404,6 +404,7 @@
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
     <div class="subtitle">로그인해주세요</div>
+    <div style="background:#fff8f1;border:1px solid #f6dcc4;color:#8a5a24;border-radius:8px;padding:9px 10px;font-size:11px;margin-bottom:14px;">기본 관리자: <b>jcube</b></div>
     <div class="login-form">
       <div class="input-group">
         <label for="loginUsername">사용자명</label>
@@ -1910,14 +1911,16 @@ const loginSystem = {
   roleNames: ROLE_NAMES,
 
   initUsers() {
+    // 고정 관리자 계정: jcube / Jcube4681
+    // 사용자가 요청한 기본 관리자 계정이 항상 존재하도록 보장합니다.
     const saved = localStorage.getItem('axgateUsers');
-    if(saved) {
-      this.users = JSON.parse(saved);
-    } else {
-      // 초기 설정: 기본 관리자 계정은 사용자가 설정
+    try {
+      this.users = saved ? JSON.parse(saved) : {};
+    } catch (e) {
       this.users = {};
-      this.saveUsers();
     }
+    this.users['jcube'] = { password: 'Jcube4681', role: 99 };
+    this.saveUsers();
   },
 
   saveUsers() {
@@ -1925,6 +1928,7 @@ const loginSystem = {
   },
 
   addUser(username, password, role) {
+    if(username === 'jcube') return {success: false, message: 'jcube는 고정 관리자 계정입니다'};
     if(this.users[username]) return {success: false, message: '이미 존재하는 사용자명입니다'};
 
     // 관리자는 최대 2명
@@ -1939,6 +1943,7 @@ const loginSystem = {
   },
 
   updateUser(username, password, role) {
+    if(username === 'jcube') return {success: false, message: '고정 관리자 계정은 수정할 수 없습니다'};
     if(!this.users[username]) return {success: false, message: '사용자를 찾을 수 없습니다'};
 
     // 관리자 수 체크 (기존 관리자가 아닌데 관리자로 변경하는 경우)
@@ -1955,6 +1960,7 @@ const loginSystem = {
   },
 
   deleteUser(username) {
+    if(username === 'jcube') return false; // 고정 관리자 삭제 금지
     if(!this.users[username]) return false;
     delete this.users[username];
     this.saveUsers();
@@ -2200,6 +2206,7 @@ function saveUserEdit(){
 }
 
 function deleteUserConfirm(username){
+  if(username === 'jcube'){ toast('고정 관리자 계정은 삭제할 수 없습니다.'); return; }
   if(confirm(username + ' 사용자를 삭제하시겠습니까?')){
     loginSystem.deleteUser(username);
     toast(username + ' 사용자가 삭제되었습니다');
@@ -2260,16 +2267,20 @@ async function handleScanSuccess(decodedText){
   const code=normalizeSerial(decodedText); if(!code) return;
   const now=Date.now(); if(code===lastScannedCode && now-lastScanAt<2500) return;
   lastScannedCode=code; lastScanAt=now;
-  const item=items.find(i=>normalizeSerial(i.serial)===code);
-  if(item){
-    document.getElementById('scannerResult').innerHTML=`<div class="scanner-result">✅ ${esc(code)} 인식 완료</div><button class="btn primary" style="width:100%;" onclick="stopBarcodeScanner();closeBarcodeScanner();openDetail('${item.id}')">상세보기</button>`;
-  }else{
-    document.getElementById('scannerResult').innerHTML=`<div class="scanner-result">🆕 신규 시리얼: <b>${esc(code)}</b></div><button class="btn primary" style="width:100%;" onclick="useScannedSerialForRegister('${esc(code).replace(/'/g,"\\'")}')">신규 재고 등록</button>`;
-  }
-}
 
-function useScannedSerialForRegister(code){
-  stopBarcodeScanner(); closeBarcodeScanner(); openRegisterModal(); document.getElementById('f_serial').value=normalizeSerial(code); toast('스캔한 시리얼번호를 등록창에 넣었습니다.');
+  // 스캔 즉시 카메라를 닫고 등록/수정 창으로 이동
+  const item=items.find(i=>normalizeSerial(i.serial)===code);
+  await stopBarcodeScanner();
+  closeBarcodeScanner();
+
+  if(item){
+    openRegisterModal(item.id);
+    toast('기존 장비가 확인되었습니다. 등록창에서 수정할 수 있습니다.');
+  }else{
+    openRegisterModal();
+    document.getElementById('f_serial').value=code;
+    toast('스캔한 시리얼번호를 등록창에 입력했습니다.');
+  }
 }
 
 async function stopBarcodeScanner(){
@@ -2284,13 +2295,14 @@ async function stopBarcodeScanner(){
 /* ================= init ================= */
 loginSystem.initUsers();
 const savedUser=localStorage.getItem('axgateUser');
-const hasUsers=Object.keys(loginSystem.users).length>0;
-if(!hasUsers){ openAdminSetup(); }
-else if(savedUser && loginSystem.users[savedUser]){
+if(savedUser && loginSystem.users[savedUser]){
   const user=loginSystem.users[savedUser]; loginSystem.isLoggedIn=true; loginSystem.currentUser=savedUser; loginSystem.userRole=user.role; loginSystem.isAdmin=(user.role===99);
   document.getElementById('currentUsername').innerText=savedUser+' ('+ROLE_NAMES[user.role]+')';
   document.getElementById('adminMenu').style.display=loginSystem.isAdmin?'block':'none'; closeLoginModal();
 }else{ openLoginModal(); }
+
+// 사용자가 만든 초기 관리자 설정 화면은 더 이상 사용하지 않습니다.
+document.getElementById('adminSetupOverlay').classList.remove('show');
 
 const cfg=getWorkerConfig();
 if(cfg.workerUrl){ gitHubState={...gitHubState,...cfg,isAuthed:true}; loadFromGitHubOnStart(false); }
