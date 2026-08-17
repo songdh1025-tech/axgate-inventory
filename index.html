@@ -2232,10 +2232,27 @@ async function startBarcodeScanner(){
   const formats=[];
   const F=window.Html5QrcodeSupportedFormats||{};
   ['QR_CODE','CODE_128','CODE_39','CODE_93','EAN_13','EAN_8','UPC_A','UPC_E','ITF','CODABAR'].forEach(k=>{if(F[k]!=null)formats.push(F[k]);});
+  const config={fps:10,qrbox:{width:260,height:180},formatsToSupport:formats.length?formats:undefined};
   try{
-    await html5QrCode.start({facingMode:{ideal:'environment'}},{fps:10,qrbox:{width:260,height:180},formatsToSupport:formats.length?formats:undefined},handleScanSuccess,()=>{});
-  }catch(err){
-    console.error(err); barcodeScanning=false; document.getElementById('startScanBtn').style.display='block'; document.getElementById('stopScanBtn').style.display='none'; document.getElementById('scannerResult').innerHTML=`<div class="scanner-result error">카메라를 시작할 수 없습니다.<br><small>${esc(err.message||String(err))}</small></div>`;
+    // html5-qrcode는 facingMode에 {ideal: ...} 형태를 받지 않습니다.
+    // 모바일 후면 카메라를 우선 사용하기 위해 정확히 문자열로 지정합니다.
+    await html5QrCode.start({facingMode:'environment'},config,handleScanSuccess,()=>{});
+  }catch(firstErr){
+    console.warn('후면 카메라 직접 시작 실패, 카메라 목록으로 재시도:', firstErr);
+    try{
+      const cameras=await Html5Qrcode.getCameras();
+      if(!cameras || !cameras.length) throw firstErr;
+      const rear=cameras.find(c=>/back|rear|environment|후면|뒤/i.test(c.label)) || cameras[cameras.length-1];
+      await html5QrCode.start(rear.id,config,handleScanSuccess,()=>{});
+    }catch(err){
+      console.error(err);
+      barcodeScanning=false;
+      try{ await html5QrCode.clear(); }catch(e){}
+      html5QrCode=null;
+      document.getElementById('startScanBtn').style.display='block';
+      document.getElementById('stopScanBtn').style.display='none';
+      document.getElementById('scannerResult').innerHTML=`<div class="scanner-result error">카메라를 시작할 수 없습니다.<br><small>${esc(err.message||String(err))}</small><br><small style="display:block;margin-top:6px;">GitHub Pages의 HTTPS 주소에서 카메라 권한을 허용했는지도 확인해주세요.</small></div>`;
+    }
   }
 }
 
