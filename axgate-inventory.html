@@ -2194,6 +2194,7 @@ function saveAdminSetup(){
   document.querySelector('.topbar').style.display = 'flex';
 
   render();
+  autoSaveToGitHub(); // 초기 설정 후 GitHub에 저장
 }
 
 /* ================= user management ================= */
