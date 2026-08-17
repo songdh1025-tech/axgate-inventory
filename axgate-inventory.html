@@ -1811,15 +1811,24 @@ async function uploadToGitHub(fileName, content){
   }
 }
 
-// 자동 저장 (조용히 백그라운드에서)
+// 자동 저장 (조용히 백그라운드에서) - 파일 분리 저장
 async function autoSaveToGitHub(){
   if(!gitHubState.isAuthed) return;
 
   try{
-    const backupData = JSON.stringify({items, logs, maintenanceContracts}, null, 2);
-    const fileName = `data.json`; // 동일 파일명으로 업데이트 (최신 데이터만 유지)
-    await uploadToGitHub(fileName, backupData);
-    console.log("GitHub에 자동 저장됨");
+    // 각 데이터를 분리해서 저장
+    const userData = JSON.stringify(loginSystem.users, null, 2);
+    const inventoryData = JSON.stringify({items, logs}, null, 2);
+    const maintenanceData = JSON.stringify({maintenanceContracts}, null, 2);
+
+    // 동시에 3개 파일 업로드
+    await Promise.all([
+      uploadToGitHub('user.json', userData),
+      uploadToGitHub('inven.json', inventoryData),
+      uploadToGitHub('maint.json', maintenanceData)
+    ]);
+
+    console.log("GitHub에 자동 저장됨 (user.json, inven.json, maint.json)");
   } catch(err){
     console.error("자동 저장 실패:", err);
   }
@@ -1874,36 +1883,53 @@ async function pullFromGitHub(){
   }
 }
 
-// 페이지 로드 시 GitHub에서 자동 로드
+// 페이지 로드 시 GitHub에서 자동 로드 - 파일 분리 로드
 async function loadFromGitHubOnStart(){
   if(!gitHubState.isAuthed) return;
 
   try{
-    const contentsUrl = `${GITHUB_CONFIG.apiUrl}/repos/${gitHubState.owner}/${gitHubState.repo}/contents/data/data.json`;
-    const fileRes = await fetch(contentsUrl, {
-      headers: {'Authorization': `token ${gitHubState.token}`}
-    });
+    const baseUrl = `${GITHUB_CONFIG.apiUrl}/repos/${gitHubState.owner}/${gitHubState.repo}/contents/data`;
 
-    if(!fileRes.ok) {
-      console.log("GitHub에 저장된 데이터가 없습니다. (첫 실행)");
-      return;
+    // 3개 파일 동시 로드
+    const [userRes, inventoryRes, maintenanceRes] = await Promise.all([
+      fetch(`${baseUrl}/user.json`, {headers: {'Authorization': `token ${gitHubState.token}`}}),
+      fetch(`${baseUrl}/inven.json`, {headers: {'Authorization': `token ${gitHubState.token}`}}),
+      fetch(`${baseUrl}/maint.json`, {headers: {'Authorization': `token ${gitHubState.token}`}})
+    ]);
+
+    // 사용자 정보 로드
+    if(userRes.ok){
+      const userData = await userRes.json();
+      const userContent = atob(userData.content);
+      loginSystem.users = JSON.parse(userContent);
+      console.log("user.json 로드됨");
     }
 
-    const fileData = await fileRes.json();
-    const content = atob(fileData.content);
-    const data = JSON.parse(content);
+    // 재고 정보 로드
+    if(inventoryRes.ok){
+      const invData = await inventoryRes.json();
+      const invContent = atob(invData.content);
+      const data = JSON.parse(invContent);
+      items = data.items || [];
+      logs = data.logs || [];
+      seq = items.length + 1;
+      console.log("inven.json 로드됨");
+    }
 
-    if(!Array.isArray(data.items)) return;
+    // 유지보수 계약 로드
+    if(maintenanceRes.ok){
+      const maintData = await maintenanceRes.json();
+      const maintContent = atob(maintData.content);
+      const data = JSON.parse(maintContent);
+      maintenanceContracts = data.maintenanceContracts || [];
+      maintSeq = maintenanceContracts.length + 1;
+      console.log("maint.json 로드됨");
+    }
 
-    items = data.items;
-    logs = data.logs || [];
-    maintenanceContracts = data.maintenanceContracts || [];
-    seq = items.length + 1;
-    maintSeq = maintenanceContracts.length + 1;
-
-    console.log("GitHub에서 데이터 로드 완료");
+    console.log("GitHub에서 모든 데이터 로드 완료");
   } catch(err){
     console.error("GitHub 자동 로드 실패:", err);
+    // 첫 실행이거나 파일이 없을 수 있으므로 오류는 무시
   }
 }
 
