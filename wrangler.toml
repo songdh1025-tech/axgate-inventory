@@ -1,0 +1,9 @@
+name = "axgate-inventory-api"
+main = "worker.js"
+compatibility_date = "2026-08-17"
+
+[vars]
+GITHUB_BRANCH = "main"
+# Do NOT put GITHUB_TOKEN here. Add it as a Cloudflare Secret.
+# GITHUB_OWNER = "your-github-id"
+# GITHUB_REPO = "axgate-inventory"

@@ -1,18 +1,2294 @@
 <!DOCTYPE html>
-<html>
-  <head>
-        <meta charset="UTF-8">
-        <title>재고관리 시스템</title>
-      <script>
-                // Auto-redirect to axgate-inventory.html
-                window.location.href = 'axgate-inventory.html';
-      </script>
-  </head>
-  <body>
-        <p>Loading AXGATE Inventory System... <a href="axgate-inventory.html">Click here if not redirected</a>a></p>
-  </body>
-</html></p>
-  </body>
-      </script></title>
-  </head>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>재고관리시스템</title>
+<meta property="og:title" content="재고관리시스템">
+<meta property="og:description" content="AXGATE 재고관리 시스템">
+<meta property="og:type" content="website">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ea5b26">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23ea5b26%22/%3E%3Ctext x=%2232%22 y=%2242%22 text-anchor=%22middle%22 font-size=%2230%22 fill=%22white%22 font-family=%22Arial%22%3EA%3C/text%3E%3C/svg%3E">
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --brand:#ea5b26;
+    --brand-dark:#c8481a;
+    --brand-light:#fdece1;
+    --bg:#f4f5f7;
+    --surface:#ffffff;
+    --border:#e6e8ec;
+    --text:#1f2430;
+    --text-mute:#747a8a;
+    --text-faint:#a4aab7;
+    --st-blue-bg:#e8f1fd;   --st-blue-text:#2f6fe0;
+    --st-green-bg:#e7f8ef;  --st-green-text:#1f9d55;
+    --st-gray-bg:#eef0f3;   --st-gray-text:#6b7280;
+    --st-red-bg:#fdecec;    --st-red-text:#e0392f;
+    --st-purple-bg:#f1ecfb; --st-purple-text:#7c4fd1;
+    --shadow:0 1px 2px rgba(20,20,30,.04), 0 6px 20px rgba(20,20,30,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--bg); color:var(--text); font-size:14px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#d7dae0;border-radius:6px;}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:fixed; top:0; left:0; right:0; height:56px; z-index:50;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; padding:0 20px; gap:18px;
+  }
+  .hamburger{
+    display:none; flex:none; align-items:center; justify-content:center; width:34px; height:34px;
+    border:none; background:none; color:var(--text); border-radius:8px; margin-right:-6px;
+  }
+  .hamburger:hover{background:var(--bg);}
+  .brand{display:flex; align-items:center; gap:8px; font-weight:800; font-size:17px; letter-spacing:.2px; width:200px; flex:none;}
+  .brand .mark{
+    width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;
+  }
+  .brand .sub{font-weight:600;color:var(--text-mute);font-size:12px;margin-left:2px;}
+  .topbar-search{
+    flex:1; max-width:420px; display:flex; align-items:center; gap:8px;
+    background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:7px 12px;
+  }
+  .topbar-search input{border:none;background:transparent;outline:none;font-size:13px;width:100%;color:var(--text);}
+  .topbar-search svg{flex:none;opacity:.5;}
+  .topbar-right{margin-left:auto; display:flex; align-items:center; gap:18px;}
+  .topbar-icon{position:relative; opacity:.65; display:flex;}
+  .mobile-search-btn{display:none; flex:none; align-items:center; justify-content:center; width:32px; height:32px; border:none; background:none; color:var(--text); opacity:.7; border-radius:8px;}
+  .mobile-search-btn:hover{background:var(--bg);}
+  .topbar-user{display:flex; flex-direction:column; align-items:flex-end; line-height:1.35;}
+  .topbar-user .name{font-weight:700; font-size:13px;}
+  .topbar-user .org{font-size:11.5px; color:var(--text-mute);}
+  .logout-btn{font-size:12px; color:var(--text-mute); border:1px solid var(--border); background:#fff; padding:5px 10px; border-radius:6px;}
+  .logout-btn:hover{border-color:var(--brand); color:var(--brand);}
+  .mobile-search-row{
+    display:none; position:fixed; top:56px; left:0; right:0; z-index:90; background:var(--surface);
+    border-bottom:1px solid var(--border); padding:10px 14px;
+  }
+  .mobile-search-row.show{display:flex;}
+  .mobile-search-row input{
+    flex:1; border:1px solid var(--border); border-radius:8px; padding:9px 12px; font-size:13px; outline:none; background:var(--bg);
+  }
+
+  /* ---------- sidebar ---------- */
+  .sidebar-overlay{display:none; position:fixed; inset:56px 0 0 0; background:rgba(15,17,23,.42); z-index:110;}
+  .sidebar-overlay.show{display:block;}
+  .sidebar{
+    position:fixed; top:56px; left:0; bottom:0; width:212px; background:var(--surface);
+    border-right:1px solid var(--border); padding:16px 12px; overflow-y:auto; z-index:111;
+  }
+  .side-cta{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:6px;
+    border:1.5px solid var(--brand); color:var(--brand); background:#fff; font-weight:700;
+    padding:10px 0; border-radius:8px; font-size:13.5px; margin-bottom:18px;
+  }
+  .side-cta:hover{background:var(--brand-light);}
+  .side-group{margin-bottom:6px;}
+  .side-label{font-size:11px; color:var(--text-faint); font-weight:700; letter-spacing:.4px; padding:8px 10px 4px;}
+  .side-item{
+    display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:7px; font-size:13.3px;
+    color:#3a3f4c; font-weight:600; margin-bottom:2px;
+  }
+  .side-item svg{flex:none; opacity:.75;}
+  .side-item:hover{background:var(--bg);}
+  .side-item.active{background:var(--brand); color:#fff;}
+  .side-item.active svg{opacity:1;}
+  .side-item .count{margin-left:auto; font-size:11px; background:var(--bg); color:var(--text-mute); border-radius:20px; padding:1px 7px;}
+  .side-item.active .count{background:rgba(255,255,255,.25); color:#fff;}
+
+  /* ---------- layout ---------- */
+  .app-main{margin-left:212px; margin-top:56px; padding:24px 28px 60px; min-height:calc(100vh - 56px);}
+  .crumb{font-size:12.5px; color:var(--text-mute); margin-bottom:6px; display:flex; align-items:center; gap:6px;}
+  .crumb b{color:var(--text); font-weight:700;}
+  .page-title{font-size:21px; font-weight:800; margin:2px 0 20px;}
+
+  /* ---------- cards / stats ---------- */
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+  .stat-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 18px; box-shadow:var(--shadow);}
+  .stat-card .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .stat-card .label{font-size:12.5px; color:var(--text-mute); font-weight:700;}
+  .stat-card .icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .stat-card .value{font-size:25px; font-weight:800; letter-spacing:-.3px;}
+  .stat-card .delta{font-size:11.5px; color:var(--text-mute); margin-top:4px;}
+  .stat-card .delta.up{color:var(--st-green-text);}
+  .stat-card .delta.warn{color:var(--st-red-text);}
+
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); margin-bottom:20px;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border);}
+  .panel-head h3{margin:0; font-size:15px; font-weight:800;}
+  .panel-body{padding:18px 20px;}
+  .two-col{display:grid; grid-template-columns:1.4fr 1fr; gap:16px;}
+
+  /* bar chart (css only) */
+  .bar-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .bar-row .b-label{width:112px; font-size:12.5px; color:var(--text-mute); font-weight:600; flex:none;}
+  .bar-track{flex:1; height:10px; background:var(--bg); border-radius:6px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:6px; background:linear-gradient(90deg,var(--brand),#f2894f);}
+  .bar-row .b-val{width:34px; text-align:right; font-size:12.5px; font-weight:700; flex:none;}
+
+  .mini-log{list-style:none; margin:0; padding:0;}
+  .mini-log li{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--border); font-size:12.8px;}
+  .mini-log li:last-child{border-bottom:none;}
+  .mini-log .dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:none;}
+  .mini-log .t{color:var(--text-faint); font-size:11px; white-space:nowrap;}
+
+  /* ---------- filter / toolbar ---------- */
+  .filter-bar{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .f-item{display:flex; align-items:center; gap:6px;}
+  .f-item label{font-size:12px; color:var(--text-mute); font-weight:700;}
+  select, .inp, input[type=text], input[type=date], input[type=number], textarea{
+    border:1px solid var(--border); border-radius:7px; padding:7px 10px; font-size:12.8px; color:var(--text);
+    background:#fff; outline:none; font-family:inherit;
+  }
+  select:focus, .inp:focus, input:focus, textarea:focus{border-color:var(--brand);}
+  .search-box{display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--border); border-radius:7px; padding:6px 10px; flex:1; min-width:180px;}
+  .search-box input{border:none; outline:none; font-size:12.8px; flex:1;}
+  .btn{
+    display:inline-flex; align-items:center; gap:6px; border-radius:7px; padding:8px 14px; font-size:12.8px; font-weight:700;
+    border:1px solid var(--border); background:#fff; color:var(--text);
+  }
+  .btn:hover{border-color:#c9cdd6;}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .btn.primary:hover{background:var(--brand-dark); border-color:var(--brand-dark);}
+  .btn.ghost{background:#fff;}
+  .btn.danger{color:var(--st-red-text); border-color:#f3cfcb;}
+  .btn.danger:hover{background:var(--st-red-bg);}
+  .btn.sm{padding:5px 10px; font-size:12px;}
+  .toolbar{display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+  .toolbar .spacer{flex:1;}
+  .result-count{font-size:12.5px; color:var(--text-mute); font-weight:600;}
+
+  /* ---------- table ---------- */
+  table{width:100%; border-collapse:collapse; font-size:12.8px;}
+  thead th{
+    background:#fafafb; color:var(--text-mute); font-weight:700; text-align:left; padding:10px 10px;
+    border-bottom:1px solid var(--border); border-top:1px solid var(--border); white-space:nowrap;
+  }
+  tbody td{padding:11px 10px; border-bottom:1px solid #f0f1f3; vertical-align:middle;}
+  tbody tr:hover{background:#fbfbfc;}
+  tbody tr.row-link{cursor:pointer;}
+  .cell-model{font-weight:700;}
+  .cell-serial{color:var(--text-mute); font-family:ui-monospace,Consolas,monospace; font-size:12px;}
+  .empty-row td{text-align:center; color:var(--text-faint); padding:40px 0;}
+
+  .badge{display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap;}
+  .badge .d{width:6px;height:6px;border-radius:50%;}
+  .badge.blue{background:var(--st-blue-bg); color:var(--st-blue-text);}
+  .badge.green{background:var(--st-green-bg); color:var(--st-green-text);}
+  .badge.gray{background:var(--st-gray-bg); color:var(--st-gray-text);}
+  .badge.red{background:var(--st-red-bg); color:var(--st-red-text);}
+  .badge.purple{background:var(--st-purple-bg); color:var(--st-purple-text);}
+
+  .pager{display:flex; align-items:center; justify-content:center; gap:4px; padding:14px 0 2px;}
+  .pager button{width:28px;height:28px;border-radius:6px;border:1px solid var(--border); background:#fff; font-size:12px;}
+  .pager button.active{background:var(--brand); border-color:var(--brand); color:#fff;}
+
+  /* ---------- modal ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(20,22,30,.45); display:none; align-items:flex-start; justify-content:center; z-index:200; padding:40px 16px; overflow-y:auto;}
+  .overlay.show{display:flex;}
+  .modal{background:#fff; border-radius:14px; width:100%; max-width:760px; box-shadow:0 20px 60px rgba(0,0,0,.25); overflow:hidden;}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border);}
+  .modal-head h3{margin:0; font-size:16px; font-weight:800;}
+  .modal-close{border:none; background:none; font-size:20px; color:var(--text-mute); line-height:1;}
+  .modal-body{padding:20px 22px; max-height:70vh; overflow-y:auto;}
+  .modal-foot{display:flex; justify-content:flex-end; gap:8px; padding:16px 22px; border-top:1px solid var(--border); background:#fafafb;}
+
+  .sec-title{display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:800; margin:22px 0 10px;}
+  .sec-title:first-child{margin-top:0;}
+  .sec-num{width:20px;height:20px;border-radius:6px;background:var(--brand-light); color:var(--brand-dark); font-size:11.5px; display:flex; align-items:center; justify-content:center; font-weight:900;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 14px;}
+  .form-field{display:flex; flex-direction:column; gap:5px;}
+  .form-field.full{grid-column:1/-1;}
+  .form-field label{font-size:12px; font-weight:700; color:var(--text-mute);}
+  .form-field label .req{color:var(--brand); margin-left:2px;}
+  .form-field textarea{resize:vertical; min-height:56px;}
+
+  .detail-grid{display:grid; grid-template-columns:1fr 1fr; gap:2px 24px; font-size:13px;}
+  .detail-grid .kv{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px dashed var(--border);}
+  .detail-grid .kv .k{color:var(--text-mute); font-weight:600;}
+  .detail-grid .kv .v{font-weight:700;}
+
+  .tabs{display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:16px;}
+  .tab{padding:9px 4px; margin-right:18px; font-size:13px; font-weight:700; color:var(--text-mute); border-bottom:2px solid transparent; cursor:pointer;}
+  .tab.active{color:var(--brand); border-color:var(--brand);}
+
+  .log-thread{list-style:none; padding:0; margin:0;}
+  .log-thread li{padding:10px 0; border-bottom:1px solid #f0f1f3; font-size:12.8px;}
+  .log-thread .row1{display:flex; justify-content:space-between; margin-bottom:3px;}
+  .log-thread .who{font-weight:700;}
+  .log-thread .when{color:var(--text-faint); font-size:11.5px;}
+
+  .empty-state{text-align:center; padding:60px 20px; color:var(--text-faint);}
+  .empty-state svg{opacity:.4; margin-bottom:10px;}
+
+  .toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); background:#20232c; color:#fff; padding:11px 20px; border-radius:9px; font-size:13px; font-weight:600; box-shadow:0 10px 30px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:all .25s ease; z-index:400;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .note{background:#fff8f1; border:1px solid #f6dcc4; color:#8a5a24; font-size:12px; border-radius:9px; padding:10px 14px; display:flex; gap:8px; align-items:flex-start; margin-bottom:16px;}
+
+  .hidden{display:none !important;}
+  @media (max-width:1100px){
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .two-col{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- mobile (<=860px): off-canvas sidebar, condensed topbar ---------- */
+  @media (max-width:860px){
+    .hamburger{display:flex;}
+    .mobile-search-btn{display:flex;}
+    .topbar{padding:0 10px; gap:8px;}
+    .topbar-search{display:none;}
+    .brand{width:auto; font-size:15px; gap:6px;}
+    .brand .sub{display:none;}
+    .topbar-right{gap:8px;}
+    .topbar-user{display:none;}
+    .logout-btn{padding:5px 9px; font-size:11px;}
+
+    .sidebar{
+      top:0; height:100%; width:78vw; max-width:280px; padding-top:70px;
+      transform:translateX(-100%); transition:transform .22s ease; box-shadow:0 12px 40px rgba(0,0,0,.18);
+    }
+    .sidebar.open{transform:translateX(0);}
+
+    .app-main{margin-left:0; padding:16px 14px 60px;}
+    .page-title{font-size:18px; margin-bottom:14px;}
+    .stat-grid{grid-template-columns:1fr 1fr; gap:10px;}
+    .stat-card{padding:14px;}
+    .stat-card .value{font-size:21px;}
+    .detail-grid{grid-template-columns:1fr;}
+    .filter-bar{padding:12px;}
+    .toolbar{gap:6px;}
+
+    .overlay{padding:0; align-items:stretch;}
+    .modal{max-width:100%; width:100%; min-height:100%; border-radius:0;}
+    .modal-body{max-height:calc(100vh - 128px);}
+  }
+  @media (max-width:768px){
+    .topbar-right{gap:6px;}
+    .topbar-icon{display:none;}
+    .logout-btn{padding:4px 8px; font-size:10px;}
+  }
+
+  @media (max-width:480px){
+    .stat-grid{grid-template-columns:1fr;}
+    .f-item{width:100%;}
+    .f-item select{flex:1;}
+    .table{font-size:11px;}
+    .app-main{padding:12px 10px 60px;}
+    .page-title{font-size:16px; margin-bottom:10px;}
+    .toolbar{flex-direction:column; gap:8px;}
+    .toolbar .btn{width:100%;}
+    .filter-bar{flex-direction:column; gap:8px;}
+    .search-box{width:100%;}
+    .stat-card{padding:12px; margin-bottom:10px;}
+    .stat-card .value{font-size:18px;}
+    .stat-card .label{font-size:11px;}
+    .panel{margin-bottom:12px;}
+    .panel-head{padding:12px 14px;}
+    .panel-body{padding:12px 14px;}
+    thead th{padding:8px 6px; font-size:11px;}
+    tbody td{padding:8px 6px; font-size:11px;}
+    .modal-head h3{font-size:15px;}
+    .form-grid{grid-template-columns:1fr;}
+    .form-field{margin-bottom:8px;}
+    .form-field input, .form-field select, .form-field textarea{padding:8px 10px; font-size:12px;}
+    .user-list li{flex-direction:column; align-items:flex-start; gap:8px;}
+    .user-list .actions{width:100%; gap:6px;}
+    .user-list .actions button{flex:1;}
+    .btn.sm{padding:4px 8px; font-size:10px;}
+    .scanner-controls{flex-direction:column;}
+    .scanner-controls button{width:100%;}
+    .login-box{padding:20px; max-width:calc(100vw - 20px);}
+  }
+
+  @media (max-width:360px){
+    .app-main{padding:10px 8px 60px;}
+    .brand{font-size:13px;}
+    .page-title{font-size:14px;}
+    .stat-card .value{font-size:16px;}
+    thead th{padding:6px 4px; font-size:10px;}
+    tbody td{padding:6px 4px; font-size:10px;}
+  }
+
+  /* ---------- login modal ---------- */
+  .login-overlay{position:fixed; inset:0; background:rgba(20,22,30,.9); display:none; align-items:center; justify-content:center; z-index:9999; padding:16px;}
+  .login-overlay.show{display:flex;}
+  .login-box{background:#fff; border-radius:16px; width:100%; max-width:400px; box-shadow:0 20px 60px rgba(0,0,0,.3); padding:40px; text-align:center;}
+  .login-box .subtitle{font-size:13px; color:var(--text-mute); margin-bottom:28px;}
+  .login-form{display:flex; flex-direction:column; gap:14px;}
+  .login-form .input-group{display:flex; flex-direction:column; gap:6px; text-align:left;}
+  .login-form label{font-size:13px; font-weight:700; color:var(--text);}
+  .login-form input{border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:13px; outline:none; font-family:inherit; width:100%;}
+  .login-form input:focus{border-color:var(--brand);}
+  .login-form .error{font-size:12px; color:var(--st-red-text); margin-top:4px; display:none;}
+  .login-form .error.show{display:block;}
+  .login-btn{background:var(--brand); color:#fff; border:none; padding:11px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; margin-top:8px; width:100%;}
+  .login-btn:hover{background:var(--brand-dark);}
+  .login-btn:disabled{opacity:.6; cursor:not-allowed;}
+
+  /* ---------- user management ---------- */
+  .user-list{list-style:none; padding:0; margin:0;}
+  .user-list li{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px;}
+  .user-list .user-info{flex:1;}
+  .user-list .username{font-weight:700; color:var(--text);}
+  .user-list .role{font-size:12px; color:var(--text-mute); margin-top:2px;}
+  .user-list .actions{display:flex; gap:6px;}
+  .user-list .actions button{padding:5px 10px; font-size:11px;}
+  .user-actions-row{display:flex; gap:8px; justify-content:flex-end; margin-top:16px;}
+
+  /* ---------- barcode scanner ---------- */
+  #barcode-scanner-container{position:relative; width:100%; background:#000; border-radius:12px; overflow:hidden; margin-bottom:16px;}
+  #barcode-scanner-video{width:100%; display:block;}
+  .scanner-controls{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .scanner-result{background:var(--st-green-bg); border:2px solid var(--st-green-text); color:var(--st-green-text); padding:12px; border-radius:8px; margin-bottom:16px; font-weight:600;}
+  .scanner-result.error{background:var(--st-red-bg); border-color:var(--st-red-text); color:var(--st-red-text);}
+  .scanner-info{font-size:12px; color:var(--text-mute); margin-bottom:12px;}
+  .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+  .photo-thumb{width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid var(--border);border-radius:8px;background:var(--bg);}
+  .photo-placeholder{display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;border:1px dashed var(--border);border-radius:8px;color:var(--text-faint);font-size:11px;background:var(--bg);}
+  .qr-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+  #qrPrintCanvas{display:inline-block;background:#fff;padding:10px;}
+  .scan-mode{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+  .scan-mode select{flex:1;}
+  .install-pwa{position:fixed;right:18px;bottom:18px;z-index:350;display:none;}
+  .install-pwa.show{display:inline-flex;}
+  .sync-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;background:var(--bg);font-size:11px;color:var(--text-mute);}
+</style>
+</head>
+<body>
+
+<!-- Initial Admin Setup Modal -->
+<div class="login-overlay" id="adminSetupOverlay">
+  <div class="login-box">
+    <div class="subtitle" style="margin-bottom:16px; font-weight:700;">초기 관리자 계정 설정</div>
+    <div style="background:#fff8f1; border:1px solid #f6dcc4; color:#8a5a24; font-size:12px; border-radius:8px; padding:10px; margin-bottom:16px;">
+      ⚠️ 초기 관리자 계정을 설정하세요. 강력한 비밀번호를 권장합니다.
+    </div>
+    <div class="login-form">
+      <div class="input-group">
+        <label for="setupUsername">관리자 사용자명</label>
+        <input type="text" id="setupUsername" placeholder="예: admin, manager 등" />
+      </div>
+      <div class="input-group">
+        <label for="setupPassword">관리자 비밀번호</label>
+        <input type="password" id="setupPassword" placeholder="강력한 비밀번호 입력" />
+      </div>
+      <div class="input-group">
+        <label for="setupPassword2">비밀번호 확인</label>
+        <input type="password" id="setupPassword2" placeholder="비밀번호 다시 입력" />
+      </div>
+      <button class="login-btn" onclick="saveAdminSetup()">설정 완료</button>
+      <div class="error" id="setupError" style="text-align:center; margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Login Modal -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="subtitle">로그인해주세요</div>
+    <div class="login-form">
+      <div class="input-group">
+        <label for="loginUsername">사용자명</label>
+        <input type="text" id="loginUsername" placeholder="사용자명 입력" />
+        <div class="error" id="usernameError"></div>
+      </div>
+      <div class="input-group">
+        <label for="loginPassword">비밀번호</label>
+        <input type="password" id="loginPassword" placeholder="비밀번호 입력" />
+        <div class="error" id="passwordError"></div>
+      </div>
+      <button class="login-btn" id="loginBtn" onclick="handleLogin()">로그인</button>
+      <div class="error" id="loginError" style="text-align:center; margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="메뉴 열기">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <div class="brand">재고관리</div>
+  <div class="topbar-search">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+    <input id="globalSearch" placeholder="모델명, 시리얼번호, 고객사 검색" />
+  </div>
+  <div class="topbar-right">
+    <button class="mobile-search-btn" onclick="toggleMobileSearch()" aria-label="검색">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+    </button>
+    <div class="topbar-icon" title="알림">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+    </div>
+    <div class="topbar-user"><span class="name" id="currentUsername">송대훈 이사</span><span class="org">제이큐브데이터(서울)</span></div>
+    <button class="logout-btn" onclick="handleLogout()">LOGOUT</button>
+  </div>
+</div>
+<div class="mobile-search-row" id="mobileSearchRow">
+  <input id="globalSearchMobile" placeholder="모델명, 시리얼번호, 고객사 검색" />
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebarEl">
+  <button class="side-cta" onclick="openBarcodeScanner()" style="margin-bottom:8px;">📱 바코드 / QR 스캔</button>
+  <button class="side-cta" onclick="openRegisterModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+    재고 등록하기
+  </button>
+
+  <div class="side-group">
+    <div class="side-label">MAIN</div>
+    <div class="side-item" data-view="dashboard" onclick="setView('dashboard')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      대시보드
+    </div>
+  </div>
+
+  <div class="side-group">
+    <div class="side-label">재고 현황</div>
+    <div class="side-item" data-view="inv-all" onclick="setView('inv-all')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+      전체 재고 <span class="count" id="cntAll">0</span>
+    </div>
+    <div class="side-item" data-view="inv-in" onclick="setView('inv-in')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+      입고 대기 <span class="count" id="cntIn">0</span>
+    </div>
+    <div class="side-item" data-view="inv-stock" onclick="setView('inv-stock')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+      보관 중 <span class="count" id="cntStock">0</span>
+    </div>
+    <div class="side-item" data-view="inv-out" onclick="setView('inv-out')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9M7 14l5-5 5 5"/><path d="M4 3h16"/></svg>
+      출고 완료 <span class="count" id="cntOut">0</span>
+    </div>
+    <div class="side-item" data-view="inv-rma" onclick="setView('inv-rma')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg>
+      RMA 점검 <span class="count" id="cntRma">0</span>
+    </div>
+  </div>
+
+  <div class="side-group">
+    <div class="side-label">유지보수</div>
+    <div class="side-item" data-view="maintenance" onclick="setView('maintenance')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8m3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+      유지보수 현황 <span class="count" id="cntMaintenance">0</span>
+    </div>
+  </div>
+
+  <div class="side-group">
+    <div class="side-label">이력 / 자료</div>
+    <div class="side-item" data-view="history" onclick="setView('history')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      입출고 이력
+    </div>
+    <div class="side-item" data-view="data" onclick="setView('data')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+      데이터 백업/복원
+    </div>
+  </div>
+
+  <div class="side-group" id="adminMenu" style="display:none;">
+    <div class="side-label">관리</div>
+    <div class="side-item" data-view="users" onclick="setView('users')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      사용자 관리
+    </div>
+  </div>
+</div>
+
+<div class="app-main" id="appMain"></div>
+
+<!-- Register / Edit modal -->
+<div class="overlay" id="regOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="regTitle">재고 등록</h3>
+      <button class="modal-close" onclick="closeModal('regOverlay')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="sec-title"><span class="sec-num">1</span>기본 정보</div>
+      <div class="form-grid">
+        <div class="form-field"><label>모델명<span class="req">*</span></label>
+          <input class="inp" list="modelList" id="f_model" placeholder="예: AXGATE-300S">
+          <datalist id="modelList"></datalist>
+        </div>
+        <div class="form-field"><label>제품군</label>
+          <select id="f_family">
+            <option>차세대방화벽</option><option>VPN</option><option>SSL가시화(복호화)</option><option>UTM</option><option>기타</option>
+          </select>
+        </div>
+        <div class="form-field"><label>시리얼번호<span class="req">*</span></label>
+          <input class="inp" id="f_serial" placeholder="예: AXKN300S2410116">
+        </div>
+        <div class="form-field"><label>수량</label>
+          <input class="inp" type="number" id="f_qty" value="1" min="1">
+        </div>
+      </div>
+
+      <div class="sec-title"><span class="sec-num">2</span>재고 정보</div>
+      <div class="form-grid">
+        <div class="form-field"><label>재고구분</label>
+          <select id="f_kind"><option>신품</option><option>중고</option><option>데모</option><option>RMA 교체품</option></select>
+        </div>
+        <div class="form-field"><label>상태</label>
+          <select id="f_status"><option>입고대기</option><option>보관중</option><option>출고완료</option><option>RMA점검</option><option>폐기</option></select>
+        </div>
+        <div class="form-field"><label>라이선스 종류</label>
+          <select id="f_license"><option>영구(Perpetual)</option><option>구독(Subscription)</option><option>선라이선스</option><option>해당없음</option></select>
+        </div>
+        <div class="form-field"><label>OS 정보</label>
+          <input class="inp" id="f_os" placeholder="예: AXOS 5.2">
+        </div>
+      </div>
+
+      <div class="sec-title"><span class="sec-num">3</span>일자 / 위치 정보</div>
+      <div class="form-grid">
+        <div class="form-field"><label>제조일</label><input class="inp" type="date" id="f_mfg"></div>
+        <div class="form-field"><label>입고일</label><input class="inp" type="date" id="f_in"></div>
+        <div class="form-field"><label>출고일</label><input class="inp" type="date" id="f_out"></div>
+        <div class="form-field"><label>최종위치</label>
+          <input class="inp" id="f_loc" placeholder="예: 본사창고 A동, 고객사명 등">
+        </div>
+        <div class="form-field full"><label>고객사 / 담당자</label>
+          <input class="inp" id="f_customer" placeholder="출고 대상 고객사 또는 담당 파트너">
+        </div>
+        <div class="form-field full"><label>비고</label>
+          <textarea id="f_memo" placeholder="특이사항을 입력하세요."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('regOverlay')">취소</button>
+      <button class="btn primary" onclick="saveItem()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Register / Edit modal -->
+<div class="overlay" id="maintRegOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="maintRegTitle">유지보수 계약 등록</h3>
+      <button class="modal-close" onclick="closeModal('maintRegOverlay')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="sec-title"><span class="sec-num">1</span>기본 정보</div>
+      <div class="form-grid">
+        <div class="form-field"><label>고객사/사이트명<span class="req">*</span></label>
+          <input class="inp" id="m_site" placeholder="예: 신협중앙회 전산실">
+        </div>
+        <div class="form-field"><label>팀별 담당자<span class="req">*</span></label>
+          <input class="inp" id="m_manager" placeholder="예: 최인호 부장">
+        </div>
+        <div class="form-field"><label>계약보고서건명</label>
+          <input class="inp" id="m_contract_name" placeholder="예: KCU NPL 대부 전산 시스템 구축">
+        </div>
+        <div class="form-field"><label>매출처</label>
+          <input class="inp" id="m_revenue" placeholder="예: 신협중앙회">
+        </div>
+      </div>
+
+      <div class="sec-title"><span class="sec-num">2</span>계약 기간</div>
+      <div class="form-grid">
+        <div class="form-field"><label>계약 시작일<span class="req">*</span></label>
+          <input class="inp" type="date" id="m_start_date">
+        </div>
+        <div class="form-field"><label>계약 종료일<span class="req">*</span></label>
+          <input class="inp" type="date" id="m_end_date">
+        </div>
+        <div class="form-field"><label>계약 상태</label>
+          <select id="m_contract_status">
+            <option>활성</option><option>만료</option><option>중단</option><option>대기</option>
+          </select>
+        </div>
+        <div class="form-field"><label>계약 타입</label>
+          <select id="m_contract_type">
+            <option>AS/유지보수</option><option>기술지원</option><option>프로젝트</option><option>기타</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec-title"><span class="sec-num">3</span>장비 정보</div>
+      <div class="form-field full"><label>담당 장비 시리얼번호 (쉼표로 구분)</label>
+        <textarea id="m_equipment_serials" placeholder="예: AXKN0400N2406044, AXSI6000N2405012" style="min-height:60px;"></textarea>
+      </div>
+
+      <div class="sec-title"><span class="sec-num">4</span>기타 정보</div>
+      <div class="form-field full"><label>비고</label>
+        <textarea id="m_memo" placeholder="계약 관련 특이사항을 입력하세요." style="min-height:60px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('maintRegOverlay')">취소</button>
+      <button class="btn primary" onclick="saveMaintenance()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance Detail modal -->
+<div class="overlay" id="maintDetOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="maintDetTitle">유지보수 계약 상세</h3>
+      <button class="modal-close" onclick="closeModal('maintDetOverlay')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="maintDetInfo"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" onclick="deleteCurrentMaintenance()">삭제</button>
+      <button class="btn" onclick="closeModal('maintDetOverlay')">닫기</button>
+      <button class="btn primary" onclick="editFromMaintDetail()">수정</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="overlay" id="detOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="detTitle">재고 상세</h3>
+      <button class="modal-close" onclick="closeModal('detOverlay')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <div class="tab active" data-tab="info" onclick="switchTab('info')">기본/재고 정보</div>
+        <div class="tab" data-tab="log" onclick="switchTab('log')">이력</div>
+      </div>
+      <div id="detInfo"></div>
+      <div id="detLog" class="hidden">
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          <input class="inp" id="logInput" placeholder="이력/코멘트를 입력하세요" style="flex:1;">
+          <button class="btn primary sm" onclick="addLog()">등록</button>
+        </div>
+        <ul class="log-thread" id="logThread"></ul>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" onclick="deleteCurrentDetail()">삭제</button>
+      <button class="btn" onclick="closeModal('detOverlay')">닫기</button>
+      <button class="btn primary" onclick="editFromDetail()">수정</button>
+    </div>
+  </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div class="overlay" id="barcodeScannerOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>바코드 스캔</h3>
+      <button class="modal-close" onclick="closeBarcodeScanner()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="scanner-info">📱 장비의 시리얼번호 바코드 또는 QR을 카메라에 비춰주세요.</div>
+       <div class="scan-mode"><label style="font-size:12px;font-weight:700;color:var(--text-mute);">인식 방식</label><select id="scanMode"><option value="barcode">바코드 / QR 자동</option></select></div>
+      <div id="barcode-scanner-container">
+        <div id="barcode-reader" style="width:100%;min-height:260px;"></div>
+      </div>
+      <div class="scanner-controls">
+        <button class="btn primary" id="startScanBtn" onclick="startBarcodeScanner()" style="flex:1;">스캔 시작</button>
+        <button class="btn" id="stopScanBtn" onclick="stopBarcodeScanner()" style="flex:1; display:none;">스캔 중지</button>
+      </div>
+      <div id="scannerResult"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeBarcodeScanner()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Management modal -->
+<div class="overlay" id="userMgmtOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>사용자 관리</h3>
+      <button class="modal-close" onclick="closeModal('userMgmtOverlay')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:16px;">
+        <button class="btn primary" onclick="openAddUserModal()">+ 사용자 추가</button>
+      </div>
+      <ul class="user-list" id="userList"></ul>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('userMgmtOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit User modal -->
+<div class="overlay" id="userEditOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="userEditTitle">사용자 추가</h3>
+      <button class="modal-close" onclick="closeModal('userEditOverlay')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-field full">
+          <label>사용자명 <span class="req">*</span></label>
+          <input class="inp" id="userEditUsername" placeholder="사용자명 입력">
+        </div>
+        <div class="form-field full">
+          <label>비밀번호 <span class="req">*</span></label>
+          <input class="inp" type="password" id="userEditPassword" placeholder="비밀번호 입력">
+        </div>
+        <div class="form-field full">
+          <label>권한 <span class="req">*</span></label>
+          <select id="userEditRole">
+            <option value="5">기본 사용자</option>
+            <option value="10">표준 사용자</option>
+            <option value="14">고급 사용자</option>
+            <option value="15">풀 액세스 사용자</option>
+            <option value="99">관리자</option>
+          </select>
+        </div>
+      </div>
+      <div id="userEditError" class="note" style="display:none; background:#fdecec; border-color:#f3cfcb; color:#e0392f; margin-top:16px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('userEditOverlay')">취소</button>
+      <button class="btn primary" onclick="saveUserEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= seed data ================= */
+const FAMILIES = ["차세대방화벽","VPN","SSL가시화(복호화)","UTM","기타"];
+const MODELS = ["AXGATE-80D","AXGATE-200","AXGATE-300S","AXGATE-400N","AXGATE-1300S","AXGATE-2300S","AXGATE-3000","AXGATE-4000","AXGATE-SI-6000N","AXGATE-VPN-100"];
+const LOCATIONS = ["본사 물류창고 A동","본사 물류창고 B동","제이큐브데이터(서울)","신협중앙회 전산실","IBK기업은행 데이터센터","대한산업안전협회","수리센터(RMA)"];
+const CUSTOMERS = ["신협중앙회","IBK기업은행","DB손해보험","대한산업안전협회","일동제약","방위사업청","(재고 보유)"];
+
+let seq = 1;
+function mkId(){ return "IV" + String(seq++).padStart(5,"0"); }
+function dstr(offsetDays){
+  const d = new Date(); d.setDate(d.getDate()+offsetDays);
+  return d.toISOString().slice(0,10);
+}
+
+// 샘플 데이터 제거 - 실제 데이터만 사용
+let items = [];
+let logs = [];
+let logSeq = 1;
+
+/* ================= maintenance data ================= */
+let maintSeq = 1;
+function mkMaintId(){ return "MT" + String(maintSeq++).padStart(5,"0"); }
+
+let maintenanceContracts = [
+  {id:'MT00001', site:'AK플라자', manager:'오 재 호', contract_name:'삼성SDS_(AK플라자) 26년 통합유지보수', revenue:'삼성SDS', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00002', site:'삼성전자', manager:'오 재 호', contract_name:'삼성SDS_(삼성전자) 26년 DS부문 기가몬 유지보수', revenue:'삼성SDS', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00003', site:'KT', manager:'오 재 호', contract_name:'에스넷시스템_(KT)26년 core망 유지보수(Extreme)', revenue:'에스넷시스템', start_date:'2026-05-01', end_date:'2027-04-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00004', site:'SDV_삼성디스플레이 베트남 법인', manager:'오 재 호', contract_name:'디딤기술_(SDV_삼성디스플레이 베트남 법인) 26년 유지보수', revenue:'디딤기술(Useflex)', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00005', site:'SDV_삼성디스플레이 베트남 법인', manager:'오 재 호', contract_name:'디딤기술_(SDV_삼성디스플레이 베트남 법인) 26년 유지보수', revenue:'디딤기술(MA&SECU)', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00006', site:'삼성SDS', manager:'오 재 호', contract_name:'에스넷시스템_(삼성SDS) 2026년 NW 통합유지보수 (DS부문 추가)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00007', site:'삼성SDS', manager:'오 재 호', contract_name:'에스넷시스템_(삼성SDS) 2026년 통합유지보수 (추가)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00008', site:'삼성SDS', manager:'오 재 호', contract_name:'에스넷시스템_(삼성SDS) 2026년 통합유지보수 (추가#1)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00009', site:'삼성SDS', manager:'오 재 호', contract_name:'에스넷시스템_(삼성SDS) 2026년 통합유지보수 (추가#2)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00010', site:'삼성전자', manager:'오 재 호', contract_name:'에스넷시스템_(삼성전자) 26년 DS부문 MIS 유지보수(익스트림)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00011', site:'삼성전자', manager:'오 재 호', contract_name:'에스넷시스템_(삼성전자) 평택 워크그룹 서비스 갱신(장애처리)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00012', site:'삼성전자', manager:'오 재 호', contract_name:'에스넷시스템_(삼성전자) 2026년 DS MIS 유지보수 (추가)', revenue:'에스넷시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00013', site:'에이블씨엔씨', manager:'오 재 호', contract_name:'우신네트웍스_(에이블씨엔씨) 26년 무선컨트럴러 유지보수', revenue:'우신네트웍스', start_date:'2026-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00014', site:'삼성전자', manager:'오 재 호', contract_name:'디딤기술_(삼성전자) 26년 EXTREME 통합유지보수 (DX부문_추가)', revenue:'디딤기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00015', site:'삼성전자', manager:'오 재 호', contract_name:'디딤기술_(삼성전자) 26년 EXTREME 통합유지보수 (DX부문#1_추가)', revenue:'디딤기술', start_date:'2026-07-01', end_date:'2027-06-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00016', site:'삼성전자', manager:'오 재 호', contract_name:'디딤기술_(삼성전자) 26년 EXTREME 통합유지보수 (DX부문)', revenue:'디딤기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00017', site:'삼성전자', manager:'오 재 호', contract_name:'디딤기술_(삼성전자) 26년 EXTREME 통합유지보수 (DS부문)', revenue:'디딤기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00018', site:'삼성SDS', manager:'오 재 호', contract_name:'디딤기술_(삼성SDS) 26년 잠실,판교 무선랜 유지보수', revenue:'디딤기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00019', site:'JP & TW', manager:'오 재 호', contract_name:'SDSAP_(JP & TW) SDSK OnM MA Service 26년 Renewal_JP and TW', revenue:'SDSAP', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00020', site:'삼성전기', manager:'오 재 호', contract_name:'이이다코리아_(삼성전기) 26년 무선랜 유지보수', revenue:'이이다코리아', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00021', site:'일본삼성', manager:'오 재 호', contract_name:'SDSAP_(일본삼성) SUHO_26년 무선랜 유지보수', revenue:'SDSAP', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00022', site:'방위사업청', manager:'오 재 호', contract_name:'수빈정보기술_(방위사업청) 26년 ATCIS 기반 IPS/VPN 유지보수', revenue:'수빈정보기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업1팀]'},
+  {id:'MT00023', site:'2026년 KBS미디어 네트워크 스위치 통합 유지보수', manager:'손우석', contract_name:'2026년 KBS미디어 네트워크 스위치 통합 유지보수', revenue:'KBS미디어', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00024', site:'아이티센씨티에스', manager:'손우석', contract_name:'26년 퍼스트어메리칸권원보험 MA (아이티센씨티에스)', revenue:'아이티센씨티에스', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00025', site:'아이넷시스템즈', manager:'손우석', contract_name:'2026년 오스템임플란트유지보수 (아이넷시스템즈)', revenue:'아이넷시스템즈', start_date:'2026-04-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00026', site:'아이넷시스템즈', manager:'손우석', contract_name:'2026년 오스템임플란트유지보수 (아이넷시스템즈)', revenue:'', start_date:'2026-04-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00027', site:'동은정보기술', manager:'손우석', contract_name:'2026년 동은메디칼 통합구매/물류정보시스템 네트워크 외 유지보수(동은정보기술)', revenue:'동은정보기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00028', site:'동은정보기술', manager:'손우석', contract_name:'2026년 동은메디칼 통합구매/물류정보시스템 네트워크 외 유지보수(동은정보기술)', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00029', site:'동은정보기술', manager:'손우석', contract_name:'2026년 동은메디칼 통합구매/물류정보시스템 네트워크 외 유지보수(동은정보기술)', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00030', site:'동은정보기술', manager:'손우석', contract_name:'2026년 동은메디칼 통합구매/물류정보시스템 네트워크 외 유지보수(동은정보기술)', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00031', site:'동은정보기술', manager:'손우석', contract_name:'2026년 동은메디칼 통합구매/물류정보시스템 네트워크 외 유지보수(동은정보기술)', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00032', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'동은정보기술', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00033', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00034', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00035', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00036', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00037', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00038', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00039', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00040', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00041', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00042', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00043', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00044', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00045', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00046', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00047', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00048', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00049', site:'동은정보기술', manager:'손우석', contract_name:'2026년 순천향대학병원 네트워크 통합유지보수 (동은정보기술)', revenue:'', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00050', site:'스페라웍스', manager:'손우석', contract_name:'2026년 고양시어린이박물관 유지보수(스페라웍스)', revenue:'스페라웍스', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00051', site:'2026년 화성시근로자종합복지관 네트워크 유지보수', manager:'손우석', contract_name:'2026년 화성시근로자종합복지관 네트워크 유지보수', revenue:'화성시근로자종합복지관', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00052', site:'비웍스', manager:'손우석', contract_name:'2026년 영상진단협회 원격판독시스템 AXGATE300S 유지보수(비웍스)', revenue:'비웍스', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00053', site:'넷팜', manager:'손우석', contract_name:'2026년 한국전력거래소 AXGATE 유지보수(넷팜)', revenue:'넷팜', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00054', site:'쿠도커뮤니케이션', manager:'손우석', contract_name:'2026년 피플라이프 전산장비 유지보수(쿠도커뮤니케이션)', revenue:'쿠도커뮤니케이션', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00055', site:'오파스넷', manager:'손우석', contract_name:'2026년 하나인재개발원 AXGATE 유지보수 (오파스넷)', revenue:'오파스넷', start_date:'2026-01-01', end_date:'2026-07-31', contract_status:'만료', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업2팀]'},
+  {id:'MT00056', site:'KT클라우드 PPP 서비스_디딤365', manager:'이성표', contract_name:'KT클라우드 PPP 서비스_디딤365', revenue:'디딤365', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[영업본부]'},
+  {id:'MT00057', site:'갱신', manager:'이재호', contract_name:'(갱신)산림조합중앙회 모바일등기 VPN 유지관리 건', revenue:'아이티콘', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00058', site:'연장', manager:'이재호', contract_name:'(연장)해양수산부_사이버안전센터 지란지교시큐리티 유지관리 건', revenue:'대신통신기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00059', site:'연장', manager:'이재호', contract_name:'(연장)2026년 인삼공사 AWS 유지보수 건', revenue:'대신네트웍스㈜', start_date:'2026-06-01', end_date:'2027-05-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00060', site:'경상북도정보센터 원격접근제어 유지관리 건', manager:'이재호', contract_name:'경상북도정보센터 원격접근제어 유지관리 건', revenue:'범일정보', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00061', site:'연장', manager:'이재호', contract_name:'(연장)대전시청 지란지교시큐리티 유지관리 건', revenue:'윌코모시스템즈', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00062', site:'연장', manager:'이재호', contract_name:'(연장)충남교육연구정보원 유지관리 건', revenue:'테라인포메이션', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00063', site:'연장', manager:'이재호', contract_name:'(연장)충남교육연구정보원 유지관리 건', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00064', site:'연장', manager:'이재호', contract_name:'(연장)충남교육연구정보원 유지관리 건', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00065', site:'연장', manager:'이재호', contract_name:'(연장)산림조합중앙회 VPN 유지보수(단기카드대출,대외계 연계) 건', revenue:'산림조합중앙회IT전략부', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00066', site:'연장', manager:'이재호', contract_name:'(연장)산림조합중앙회 VPN 유지보수(단기카드대출,대외계 연계) 건', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00067', site:'연장', manager:'이재호', contract_name:'(연장)산림조합중앙회 VPN 유지보수(단기카드대출,대외계 연계) 건', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00068', site:'갱신', manager:'이재호', contract_name:'(갱신)공주중앙소방학교 유지관리 건', revenue:'이노솔루텍', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00069', site:'연장', manager:'이재호', contract_name:'(연장)세종시교육청 원격접근제어 유지보수 건', revenue:'이노솔루텍', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00070', site:'갱신', manager:'이재호', contract_name:'(갱신)대구광역시교육청 2026년 표준기록관리 인프라 유지관리', revenue:'범일정보', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00071', site:'갱신', manager:'이재호', contract_name:'(갱신)대구광역시교육청 2026년 표준기록관리 인프라 유지관리', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00072', site:'신촌', manager:'이재호', contract_name:'연세의료원(신촌) 원격접근제어 유지보수 건', revenue:'넷앤드', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00073', site:'신촌', manager:'이재호', contract_name:'연세의료원(신촌) HI-PAM 유지보수 건', revenue:'넷앤드', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00074', site:'연장', manager:'이재호', contract_name:'(연장)연세의료원(용인) 원격접근제어 유지보수 건', revenue:'넷앤드', start_date:'2026-05-01', end_date:'2027-04-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00075', site:'연장', manager:'이재호', contract_name:'(연장)당진시청 지란지교시큐리티 유지관리 건', revenue:'눈소프트', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00076', site:'DB Inc 원격접근제어 유지보수 건', manager:'이재호', contract_name:'DB Inc 원격접근제어 유지보수 건', revenue:'넷앤드', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00077', site:'연장', manager:'이재호', contract_name:'(연장)대전시교육정보원_AXGATE VPN 유지보수 건', revenue:'케이에스솔루션', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00078', site:'울산교육연구정보원 교육시스템 유지관리 용역 건', manager:'이재호', contract_name:'울산교육연구정보원 교육시스템 유지관리 용역 건', revenue:'엔정보기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00079', site:'연장', manager:'이재호', contract_name:'(연장)리딩투자증권_원격접근제어 유지보수 건', revenue:'아임솔텍', start_date:'2026-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00080', site:'연장', manager:'이재호', contract_name:'(연장)한국직업능력개발원 지란지교시큐리티 유지관리 건', revenue:'원시스', start_date:'2026-05-01', end_date:'2027-04-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00081', site:'갱신', manager:'이재호', contract_name:'(갱신)한국화학연구원 지란지교시큐리티 유지관리 건', revenue:'에이원인포텍', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00082', site:'연장', manager:'이재호', contract_name:'(연장)26,27년 국립세종도서관 기타 H/W 유지보수용역 (Hi-Ware)건', revenue:'아이티룩스', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00083', site:'연장', manager:'이재호', contract_name:'(연장)공주시청 지란지교시큐리티 유지관리 건', revenue:'유엔아이티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00084', site:'연장', manager:'이재호', contract_name:'(연장)경기도교육청 무선망 원격접근제어 유지보수', revenue:'에스넷아이씨티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00085', site:'연장', manager:'이재호', contract_name:'(연장)경기도교육청 고입포탈 원격접근제어 유지보수 건', revenue:'천명시스템', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00086', site:'연장', manager:'이재호', contract_name:'(연장)2026년~2027년 교육행정종합센터 시스템 운영(장기계속 1차)', revenue:'소프트아이텍', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00087', site:'연장', manager:'이재호', contract_name:'(연장)2026년~2027년 교육행정종합센터 시스템 운영(장기계속 1차)', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00088', site:'연장', manager:'이재호', contract_name:'(연장)유성구청 지란지교시큐리티 유지관리 건', revenue:'유엔아이티', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00089', site:'한국소비자원 지란지교시큐리티 유지관리 건', manager:'이재호', contract_name:'한국소비자원 지란지교시큐리티 유지관리 건', revenue:'그노티', start_date:'2026-04-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00090', site:'연장', manager:'이재호', contract_name:'(연장)창업진흥원 지란지교시큐리티 유지관리 건', revenue:'해냄정보기술', start_date:'2026-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00091', site:'연장', manager:'이재호', contract_name:'(연장)2026년 퍼스텍 유지관리 건', revenue:'젠투', start_date:'2026-06-01', end_date:'2027-05-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00092', site:'갱신', manager:'이재호', contract_name:'(갱신)산림조합중앙회 비대면 VPN 엑스게이트 유지보수 건', revenue:'티에스라인시스템㈜', start_date:'2026-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00093', site:'산림조합중앙회 재해복구센터 VPN,L2 유지관리 건', manager:'이재호', contract_name:'산림조합중앙회 재해복구센터 VPN,L2 유지관리 건', revenue:'롯데정보통신', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00094', site:'연장', manager:'이재호', contract_name:'(연장)HD현대삼호 원격접근제어 유지관리 건', revenue:'HD현대삼호', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00095', site:'제주융합과학연구원', manager:'이재호', contract_name:'2026년 네트워크 및 정보보호시스템 통합유지관리(제주융합과학연구원) 건', revenue:'(주)대성정보기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00096', site:'갱신', manager:'이재호', contract_name:'(갱신)조선대학교 원격접근제어 유지관리 건', revenue:'싸이버테크', start_date:'2026-02-08', end_date:'2027-02-07', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00097', site:'연장', manager:'이재호', contract_name:'(연장)2026년 남해화학 원격접근제어 유지관리 건', revenue:'싸이버테크', start_date:'2026-07-01', end_date:'2027-06-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00098', site:'연장', manager:'이재호', contract_name:'(연장) 2025년 목포대학교_ICT 도입 장비 관리사업 용역 넷앤드 유지보수 건', revenue:'싸이버테크', start_date:'2026-03-01', end_date:'2026-05-31', contract_status:'만료', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00099', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 한국전기안전공사 원격접근제어 유지보수 건', revenue:'허밍', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00100', site:'연장', manager:'이재호', contract_name:'(연장)KTNG Officehard Cloud 건', revenue:'KTNG', start_date:'2026-06-17', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00101', site:'연장', manager:'이재호', contract_name:'(연장)2026년 보이스캐디 방화벽 유지보수 건', revenue:'㈜티엔에스솔루션', start_date:'2026-08-01', end_date:'2027-07-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00102', site:'연장', manager:'이재호', contract_name:'(연장)옥천군청 OfficeHard 유지보수 견적의 건', revenue:'케이정보기술', start_date:'2026-01-01', end_date:'2028-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00103', site:'국가과학기술인력개발원 지란지교시큐리티 유지관리 건', manager:'이재호', contract_name:'국가과학기술인력개발원 지란지교시큐리티 유지관리 건', revenue:'어빌리티시스템즈', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00104', site:'연장', manager:'이재호', contract_name:'(연장)KERIS 지란지교시큐리티 새니톡스 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00105', site:'갱신', manager:'이재호', contract_name:'(갱신) 국립재난안전연구원 26년 재난정보연구실험시설 유지관리사업(보안 및 네트워크)', revenue:'에이치씨엔씨', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00106', site:'갱신', manager:'이재호', contract_name:'(갱신) 국립재난안전연구원 26년 재난정보연구실험시설 유지관리사업(보안 및 네트워크)', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00107', site:'갱신', manager:'이재호', contract_name:'(갱신) 국립재난안전연구원 26년 재난정보연구실험시설 유지관리사업(보안 및 네트워크)', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00108', site:'갱신', manager:'이재호', contract_name:'(갱신) 국립재난안전연구원 26년 재난정보연구실험시설 유지관리사업(보안 및 네트워크)', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00109', site:'갱신', manager:'이재호', contract_name:'(갱신) 국립재난안전연구원 26년 재난정보연구실험시설 유지관리사업(보안 및 네트워크)', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00110', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 이큐셀 원격접근제어 유지보수 건', revenue:'이큐셀', start_date:'2026-06-01', end_date:'2027-05-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00111', site:'이화전기 DB접근제어 유지보수 건', manager:'이재호', contract_name:'이화전기 DB접근제어 유지보수 건', revenue:'이화전기', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00112', site:'갱신', manager:'이재호', contract_name:'(갱신)조달청 지란지교시큐리티 유지관리 건', revenue:'에스큐브아이', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00113', site:'2026년 서구 정보시스템 통합유지보수 용역 유지관리 사업', manager:'이재호', contract_name:'2026년 서구 정보시스템 통합유지보수 용역 유지관리 사업', revenue:'대신네트웍스', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00114', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 동양AK코리아(에이케이) 지란지교시큐리티 유지관리 건', revenue:'다담솔루션', start_date:'2026-05-01', end_date:'2027-04-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00115', site:'연장', manager:'이재호', contract_name:'(연장)질병관리청 지란지교 시큐리티 유지보수 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00116', site:'연장', manager:'이재호', contract_name:'(연장)2026년 국방지형정보단 지란지교 시큐리티 유지보수 건', revenue:'지란지교시큐리티', start_date:'2026-06-01', end_date:'2028-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00117', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 패커드코리아 지란지교 시큐리티 유지보수 건', revenue:'지란지교시큐리티', start_date:'2026-02-01', end_date:'2027-01-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00118', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 한국도로공사대전지방국토관리청 지란지교시큐리티 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00119', site:'연장', manager:'이재호', contract_name:'(연장)정보통신정책연구원 지란지교시큐리티 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00120', site:'연장', manager:'이재호', contract_name:'(연장)한국표준과학연구원 지란지교시큐리티 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00121', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 세명대학교 지란지교시큐리티 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-03-01', end_date:'2027-02-28', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00122', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 한국인삼공사 지란지교시큐리티 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-06-01', end_date:'2027-05-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00123', site:'연장', manager:'이재호', contract_name:'(연장)2026년 한국자동차연구원 지란지교시큐리티 유지관리 건', revenue:'한국자동차연구원', start_date:'2026-07-01', end_date:'2027-06-30', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00124', site:'2026년 코웨이 기업통신서비스 운영유지보수 상주인력 및 전국 현장출동', manager:'이재호', contract_name:'2026년 코웨이 기업통신서비스 운영유지보수 상주인력 및 전국 현장출동', revenue:'KT엔지니어링', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00125', site:'산림조합중앙회 온라인 회선망 유지보수 건', manager:'이재호', contract_name:'산림조합중앙회 온라인 회선망 유지보수 건', revenue:'LG U+', start_date:'2025-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00126', site:'산림조합중앙회 온라인 회선망 유지보수 건', manager:'이재호', contract_name:'산림조합중앙회 온라인 회선망 유지보수 건', revenue:'', start_date:'2025-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00127', site:'산림조합중앙회 온라인 회선망 유지보수 건', manager:'이재호', contract_name:'산림조합중앙회 온라인 회선망 유지보수 건', revenue:'', start_date:'2025-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00128', site:'산림조합중앙회 온라인 회선망 유지보수 건', manager:'이재호', contract_name:'산림조합중앙회 온라인 회선망 유지보수 건', revenue:'', start_date:'2025-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00129', site:'산림조합중앙회 온라인 회선망 유지보수 건', manager:'이재호', contract_name:'산림조합중앙회 온라인 회선망 유지보수 건', revenue:'', start_date:'2025-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00130', site:'산림조합중앙회 온라인 회선망 유지보수 건', manager:'이재호', contract_name:'산림조합중앙회 온라인 회선망 유지보수 건', revenue:'', start_date:'2025-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00131', site:'연장', manager:'이재호', contract_name:'(연장)4세대 나이스 2024년 ~ 2025년 나이스 인프라 유지관리 연장 건', revenue:'태진티엔에스', start_date:'2026-01-01', end_date:'2026-03-31', contract_status:'만료', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00132', site:'연장', manager:'이재호', contract_name:'(연장)4세대 나이스 2024년 ~ 2025년 나이스 인프라 유지관리 연장 건', revenue:'', start_date:'2026-01-01', end_date:'2026-03-31', contract_status:'만료', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00133', site:'연장', manager:'이재호', contract_name:'(연장)4세대 나이스 2024년 ~ 2025년 나이스 인프라 유지관리 연장 건', revenue:'', start_date:'2026-01-01', end_date:'2026-03-31', contract_status:'만료', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00134', site:'연장', manager:'이재호', contract_name:'(연장)4세대 나이스 2024년 ~ 2025년 나이스 인프라 유지관리 연장 건', revenue:'', start_date:'2026-01-01', end_date:'2026-03-31', contract_status:'만료', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00135', site:'26년 나이스 물적기반 유지관리 건', manager:'이재호', contract_name:'26년 나이스 물적기반 유지관리 건', revenue:'소프트아이텍', start_date:'2026-04-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00136', site:'26년 나이스 물적기반 유지관리 건', manager:'이재호', contract_name:'26년 나이스 물적기반 유지관리 건', revenue:'', start_date:'2026-04-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00137', site:'26년 나이스 물적기반 유지관리 건', manager:'이재호', contract_name:'26년 나이스 물적기반 유지관리 건', revenue:'', start_date:'2026-04-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00138', site:'2026~2027년 나이스 클라우드센터 운영 및 유지관리 건', manager:'이재호', contract_name:'2026~2027년 나이스 클라우드센터 운영 및 유지관리 건', revenue:'아이티센엔텍', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00139', site:'2026~2027년 나이스 클라우드센터 운영 및 유지관리 건', manager:'이재호', contract_name:'2026~2027년 나이스 클라우드센터 운영 및 유지관리 건', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00140', site:'교육정보재해복구서비스 운영 및 시스템 유지관리 건', manager:'이재호', contract_name:'교육정보재해복구서비스 운영 및 시스템 유지관리 건', revenue:'아이티센엔텍', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00141', site:'교육정보재해복구서비스 운영 및 시스템 유지관리 건', manager:'이재호', contract_name:'교육정보재해복구서비스 운영 및 시스템 유지관리 건', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00142', site:'교육정보재해복구서비스 운영 및 시스템 유지관리 건', manager:'이재호', contract_name:'교육정보재해복구서비스 운영 및 시스템 유지관리 건', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00143', site:'신규', manager:'이재호', contract_name:'(신규) 국토교통부 지란지교시큐리티 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00144', site:'신규', manager:'이재호', contract_name:'(신규)KERIS 지란지교시큐리티 새니톡스 교데통 유지관리 건', revenue:'지란지교시큐리티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00145', site:'신규', manager:'이재호', contract_name:'(신규)산림과학원 원격접근제어 유지보수', revenue:'에스넷아이씨티', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00146', site:'신규', manager:'이재호', contract_name:'(신규)웨어뱅크 SSL VPN 유지보수 건', revenue:'라인네트웍스', start_date:'2026-07-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00147', site:'신규', manager:'이재호', contract_name:'(신규)25년 유치원 원격접근제어 유지보수 건', revenue:'에스넷아이씨티㈜', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00148', site:'신규', manager:'이재호', contract_name:'(신규)산림조합중앙회 PPR시스템 유지보수_S/W SSL VPN 유지보수 건', revenue:'인젠트', start_date:'2025-10-17', end_date:'2026-10-16', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00149', site:'신규', manager:'이재호', contract_name:'(신규)산림조합중앙회 PPR시스템 유지보수H/W L2 스위치 유지보수 건', revenue:'인젠트', start_date:'2025-10-17', end_date:'2026-10-16', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00150', site:'신규', manager:'이재호', contract_name:'(신규)산림조합중앙회 차세대시스템 통합 유지보수 건', revenue:'크레오에스지', start_date:'2025-12-14', end_date:'2028-11-13', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00151', site:'신규', manager:'이재호', contract_name:'(신규)2025년 광주광역시_AI 통합지원 서비스 플랫폼 원격접근제어 유지보수', revenue:'한결정보기술㈜', start_date:'2025-09-01', end_date:'2026-08-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00152', site:'연장', manager:'이재호', contract_name:'(연장) 2026년 병무청 원격접근제어 유지보수', revenue:'에스넷아이씨티㈜', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00153', site:'신규', manager:'이재호', contract_name:'(신규)과학기술정보통신부_원격접급제어 유지보수', revenue:'글로벌텔레콤', start_date:'2026-02-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00154', site:'신규', manager:'이재호', contract_name:'(신규)경기도청 DB접근제어 유지보수', revenue:'에스엠티정보기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00155', site:'신규', manager:'이재호', contract_name:'(신규)기후에너지환경부 유지보수', revenue:'디에스티인터내셔날', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00156', site:'신규', manager:'이재호', contract_name:'(신규)기후에너지환경부 유지보수', revenue:'', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00157', site:'신규', manager:'이재호', contract_name:'(신규)산림조합중앙회 위험기반 자금세탁 유지보수 건', revenue:'지티원㈜', start_date:'2026-02-01', end_date:'2027-01-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00158', site:'신규', manager:'이재호', contract_name:'(신규)제주소방본부 원격접근제어 유지보수', revenue:'시스넷정보기술', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00159', site:'신규', manager:'이재호', contract_name:'(신규)교데통 인프라 건', revenue:'엠티데이타', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00160', site:'신규', manager:'이재호', contract_name:'(신규)교데통 인프라 건', revenue:'', start_date:'2026-01-01', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00161', site:'신규', manager:'이재호', contract_name:'(신규)교데통 시도교육청인프라 건', revenue:'엠티데이타', start_date:'2026-02-19', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00162', site:'신규', manager:'이재호', contract_name:'(신규)교데통 시도교육청인프라 건', revenue:'', start_date:'2026-02-19', end_date:'2027-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00163', site:'달성군시설관리공단 HI-PSM 유지보수 건', manager:'이재호', contract_name:'달성군시설관리공단 HI-PSM 유지보수 건', revenue:'유타스', start_date:'2026-04-01', end_date:'2027-03-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00164', site:'연장', manager:'이재호', contract_name:'(연장)한국지역정보개발원 HI-PSM 유지보수 건', revenue:'동양정보서비스', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'},
+  {id:'MT00165', site:'연장', manager:'이재호', contract_name:'(연장)스튜디오 4View VPN 유지보수 건', revenue:'㈜티엔에스솔루션', start_date:'2026-01-01', end_date:'2026-12-31', contract_status:'활성', contract_type:'AS/유지보수', equipment_serials:'', memo:'[지역사업본부]'}
+];
+
+let maintEditingId = null;
+let maintDetailId = null;
+
+/* ================= state ================= */
+let view = "dashboard";
+let filters = {status:"전체", kind:"전체", q:""};
+let editingId = null;
+let detailId = null;
+
+/* ================= helpers ================= */
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function fmtNum(n){ return Number(n||0).toLocaleString("ko-KR"); }
+function statusBadge(s){
+  const map = {
+    "입고대기":"gray", "보관중":"blue", "출고완료":"green", "RMA점검":"purple", "폐기":"red"
+  };
+  const cls = map[s] || "gray";
+  return `<span class="badge ${cls}"><span class="d" style="background:currentColor;"></span>${s}</span>`;
+}
+function maintStatusBadge(s){
+  const map = {
+    "활성":"green", "만료":"red", "중단":"gray", "대기":"blue"
+  };
+  const cls = map[s] || "gray";
+  return `<span class="badge ${cls}"><span class="d" style="background:currentColor;"></span>${s}</span>`;
+}
+function isContractExpired(endDate){
+  return endDate < dstr(0);
+}
+function esc(s){ return (s||"").toString().replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function statusCounts(){
+  const c = {"입고대기":0,"보관중":0,"출고완료":0,"RMA점검":0,"폐기":0};
+  items.forEach(it=>{ c[it.status] = (c[it.status]||0)+1; });
+  return c;
+}
+function refreshSideCounts(){
+  const c = statusCounts();
+  document.getElementById("cntAll").textContent = items.length;
+  document.getElementById("cntIn").textContent = c["입고대기"];
+  document.getElementById("cntStock").textContent = c["보관중"];
+  document.getElementById("cntOut").textContent = c["출고완료"];
+  document.getElementById("cntRma").textContent = c["RMA점검"];
+  document.getElementById("cntMaintenance").textContent = maintenanceContracts.length;
+}
+
+/* ================= view routing ================= */
+function setView(v){
+  view = v; filters = {status:"전체", kind:"전체", q:""};
+  document.querySelectorAll(".side-item").forEach(el=>el.classList.toggle("active", el.dataset.view===v));
+  render();
+  closeSidebar();
+}
+
+/* ---------- mobile nav helpers ---------- */
+function toggleSidebar(){
+  document.getElementById("sidebarEl").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("show");
+}
+function closeSidebar(){
+  document.getElementById("sidebarEl").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+}
+function toggleMobileSearch(){
+  const row = document.getElementById("mobileSearchRow");
+  row.classList.toggle("show");
+  if(row.classList.contains("show")) document.getElementById("globalSearchMobile").focus();
+}
+function runGlobalSearch(q){
+  filters.q = q;
+  if(!view.startsWith("inv-")) view = "inv-all";
+  document.querySelectorAll(".side-item").forEach(el=>el.classList.toggle("active", el.dataset.view===view));
+  render();
+}
+
+function render(){
+  refreshSideCounts();
+  const main = document.getElementById("appMain");
+  if(view==="dashboard") main.innerHTML = renderDashboard();
+  else if(view==="history") main.innerHTML = renderHistory();
+  else if(view==="data") main.innerHTML = renderData();
+  else if(view==="maintenance") main.innerHTML = renderMaintenance();
+  else if(view==="users") openUserManagement();
+  else {
+    main.innerHTML = renderInventory(view);
+    // Add barcode scanner button on mobile for inventory views
+    setTimeout(()=>{
+      const toolbar = main.querySelector('.toolbar');
+      if(toolbar && !document.getElementById('scannerBtnAdded')){
+        const scanBtn = document.createElement('button');
+        scanBtn.id = 'scannerBtnAdded';
+        scanBtn.className = 'btn primary';
+        scanBtn.innerHTML = '📱 바코드 스캔';
+        scanBtn.onclick = openBarcodeScanner;
+        toolbar.appendChild(scanBtn);
+      }
+    }, 0);
+  }
+  bindDynamicHandlers();
+}
+
+/* ---------- dashboard ---------- */
+function renderDashboard(){
+  const c = statusCounts();
+  const totalQty = items.reduce((s,it)=>s+Number(it.qty||0),0);
+  const thisMonthIn = items.filter(it=>it.in && it.in.slice(0,7)===dstr(0).slice(0,7)).length;
+  const thisMonthOut = items.filter(it=>it.out && it.out.slice(0,7)===dstr(0).slice(0,7)).length;
+  const rmaCount = c["RMA점검"];
+
+  const byFamily = {};
+  items.forEach(it=>{ byFamily[it.family] = (byFamily[it.family]||0) + Number(it.qty||0); });
+  const maxFam = Math.max(1, ...Object.values(byFamily));
+
+  const recentLogs = [...logs].sort((a,b)=> (a.when<b.when?1:-1)).slice(0,6);
+
+  return `
+    <div class="crumb"><b>대시보드</b></div>
+    <div class="page-title">재고 대시보드</div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="top"><span class="label">총 재고 수량</span>
+          <span class="icon" style="background:var(--brand-light); color:var(--brand-dark);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+          </span></div>
+        <div class="value">${fmtNum(totalQty)}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 대</span></div>
+        <div class="delta">총 ${items.length}건 등록 자산</div>
+      </div>
+      <div class="stat-card">
+        <div class="top"><span class="label">이번 달 입고</span>
+          <span class="icon" style="background:var(--st-blue-bg); color:var(--st-blue-text);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+          </span></div>
+        <div class="value">${thisMonthIn}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 건</span></div>
+        <div class="delta up">입고대기 ${c["입고대기"]}건 진행 중</div>
+      </div>
+      <div class="stat-card">
+        <div class="top"><span class="label">이번 달 출고</span>
+          <span class="icon" style="background:var(--st-green-bg); color:var(--st-green-text);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9M7 14l5-5 5 5"/><path d="M4 3h16"/></svg>
+          </span></div>
+        <div class="value">${thisMonthOut}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 건</span></div>
+        <div class="delta">누적 출고 ${c["출고완료"]}건</div>
+      </div>
+      <div class="stat-card">
+        <div class="top"><span class="label">RMA / 점검 중</span>
+          <span class="icon" style="background:var(--st-purple-bg); color:var(--st-purple-text);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          </span></div>
+        <div class="value">${rmaCount}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 건</span></div>
+        <div class="delta ${rmaCount>0?'warn':''}">${rmaCount>0? '점검 대응이 필요합니다' : '점검 중인 장비 없음'}</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-head"><h3>제품군별 재고 수량</h3></div>
+        <div class="panel-body">
+          ${Object.entries(byFamily).map(([f,q])=>`
+            <div class="bar-row">
+              <div class="b-label">${esc(f)}</div>
+              <div class="bar-track"><div class="bar-fill" style="width:${Math.round(q/maxFam*100)}%"></div></div>
+              <div class="b-val">${q}</div>
+            </div>`).join("")}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>최근 활동</h3></div>
+        <div class="panel-body">
+          <ul class="mini-log">
+            ${recentLogs.map(l=>{
+              const it = items.find(i=>i.id===l.itemId);
+              return `<li><span class="dot" style="background:var(--brand);"></span>
+                <div><div>${esc(l.text)}</div>
+                <div class="t">${esc(l.when)} · ${it? esc(it.model):""}</div></div></li>`;
+            }).join("") || "<li>표시할 활동이 없습니다.</li>"}
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- inventory list ---------- */
+const VIEW_STATUS_MAP = {
+  "inv-all": null, "inv-in":"입고대기", "inv-stock":"보관중", "inv-out":"출고완료", "inv-rma":"RMA점검"
+};
+const VIEW_TITLE_MAP = {
+  "inv-all":"전체 재고", "inv-in":"입고 대기", "inv-stock":"보관 중", "inv-out":"출고 완료", "inv-rma":"RMA 점검"
+};
+
+function filteredItems(v){
+  const forced = VIEW_STATUS_MAP[v];
+  return items.filter(it=>{
+    if(forced && it.status!==forced) return false;
+    if(filters.status!=="전체" && it.status!==filters.status) return false;
+    if(filters.kind!=="전체" && it.kind!==filters.kind) return false;
+    if(filters.q){
+      const q = filters.q.toLowerCase();
+      const hay = (it.model+it.serial+it.customer+it.loc).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderInventory(v){
+  const list = filteredItems(v);
+  const title = VIEW_TITLE_MAP[v] || "전체 재고";
+  return `
+    <div class="crumb">재고 현황 &nbsp;›&nbsp; <b>${title}</b></div>
+    <div class="page-title">${title}</div>
+
+    <div class="filter-bar">
+      <div class="f-item"><label>상태</label>
+        <select id="filStatus" onchange="onFilterChange()">
+          ${["전체","입고대기","보관중","출고완료","RMA점검","폐기"].map(s=>`<option ${filters.status===s?'selected':''}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div class="f-item"><label>재고구분</label>
+        <select id="filKind" onchange="onFilterChange()">
+          ${["전체","신품","중고","데모","RMA 교체품"].map(s=>`<option ${filters.kind===s?'selected':''}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+        <input id="filQ" placeholder="모델명 / 시리얼번호 / 고객사 검색" value="${esc(filters.q)}" oninput="onFilterChange()">
+      </div>
+      <button class="btn ghost sm" onclick="resetFilters()">검색 초기화</button>
+    </div>
+
+    <div class="toolbar">
+      <span class="result-count">전체 ${list.length}건</span>
+      <div class="spacer"></div>
+      <button class="btn primary sm" onclick="openRegisterModal()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>등록</button>
+      <button class="btn sm" onclick="exportCSV(filteredItems(view))">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>엑셀 다운로드</button>
+    </div>
+
+    <div class="panel">
+      <div style="overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th>상태</th><th>모델명</th><th>시리얼번호</th><th>재고구분</th><th>라이선스</th>
+          <th>제조일</th><th>입고일</th><th>출고일</th><th>최종위치</th><th>수량</th><th>비고</th>
+        </tr></thead>
+        <tbody>
+          ${list.length? list.map(it=>`
+            <tr class="row-link" onclick="openDetail('${it.id}')">
+              <td>${statusBadge(it.status)}</td>
+              <td class="cell-model">${esc(it.model)}</td>
+              <td class="cell-serial">${esc(it.serial)}</td>
+              <td>${esc(it.kind)}</td>
+              <td>${esc(it.license)}</td>
+              <td>${esc(it.mfg)||"-"}</td>
+              <td>${esc(it.in)||"-"}</td>
+              <td>${esc(it.out)||"-"}</td>
+              <td>${esc(it.loc)}</td>
+              <td>${fmtNum(it.qty)}</td>
+              <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-mute);">${esc(it.memo)||"-"}</td>
+            </tr>`).join("") : `<tr class="empty-row"><td colspan="11">조회된 데이터가 없습니다.</td></tr>`}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  `;
+}
+
+function onFilterChange(){
+  filters.status = document.getElementById("filStatus").value;
+  filters.kind = document.getElementById("filKind").value;
+  filters.q = document.getElementById("filQ").value;
+  render();
+  // restore focus to search box for smooth typing
+  setTimeout(()=>{ const el=document.getElementById("filQ"); if(el){ el.focus(); el.selectionStart = el.selectionEnd = el.value.length; } },0);
+}
+function resetFilters(){ filters = {status:"전체", kind:"전체", q:""}; render(); }
+
+/* ---------- history ---------- */
+function renderHistory(){
+  const sorted = [...logs].sort((a,b)=> (a.when<b.when?1:-1));
+  return `
+    <div class="crumb"><b>입출고 이력</b></div>
+    <div class="page-title">입출고 / 처리 이력</div>
+    <div class="panel">
+      <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th style="width:150px;">일시</th><th style="width:170px;">모델명</th><th style="width:170px;">시리얼번호</th><th>내용</th><th style="width:130px;">작성자</th></tr></thead>
+        <tbody>
+        ${sorted.length? sorted.map(l=>{
+          const it = items.find(i=>i.id===l.itemId);
+          return `<tr class="row-link" onclick="${it? `openDetail('${it.id}')` : ''}">
+            <td>${esc(l.when)}</td>
+            <td class="cell-model">${it? esc(it.model):"-"}</td>
+            <td class="cell-serial">${it? esc(it.serial):"-"}</td>
+            <td>${esc(l.text)}</td>
+            <td>${esc(l.who)}</td>
+          </tr>`;
+        }).join("") : `<tr class="empty-row"><td colspan="5">조회된 이력이 없습니다.</td></tr>`}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- data backup ---------- */
+function renderData(){
+  const ghAuthStatus = gitHubState.isAuthed ? `<span class="sync-pill">● Worker 연결됨</span>` : '<span class="sync-pill">○ Worker 미연결</span>';
+  return `
+    <div class="crumb"><b>데이터 백업/복원</b></div>
+    <div class="page-title">데이터 백업 / 복원</div>
+    <div class="note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <div><b>GitHub Pages 운영 버전:</b> 브라우저에는 GitHub Token을 저장하지 않습니다. Cloudflare Worker가 GitHub API를 대신 호출합니다. 사용자 비밀번호는 공개 JSON에 저장하지 않으며 현재 브라우저별 로컬 인증으로 관리합니다.</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>☁️ GitHub 저장 연동</h3></div>
+      <div class="panel-body">
+        <p style="color:var(--text-mute); margin-top:0; margin-bottom:12px;">${ghAuthStatus} 저장소 데이터: <b>${esc(gitHubState.owner||'미설정')}/${esc(gitHubState.repo||'미설정')}</b></p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn primary" onclick="initGitHub()">⚙️ Worker 설정</button>
+          <button class="btn" onclick="pushToGitHub()">☁️ 지금 저장</button>
+          <button class="btn" onclick="pullFromGitHub()">↻ 서버에서 불러오기</button>
+          <button class="btn danger sm" onclick="disconnectGitHub()">연결 해제</button>
+        </div>
+        <div id="githubStatus" style="font-size:12px;color:var(--text-mute);padding:8px;margin-top:12px;background:var(--bg);border-radius:6px;">${esc(gitHubState.status||'Worker 주소를 설정하세요.')}</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-head"><h3>📊 Excel / JSON 내보내기</h3></div>
+        <div class="panel-body">
+          <p style="color:var(--text-mute);margin-top:0;">현재 재고 ${items.length}건, 이력 ${logs.length}건, 계약 ${maintenanceContracts.length}건</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn primary" onclick="exportExcel()">📗 Excel 내보내기</button>
+            <button class="btn" onclick="exportJSON()">JSON 내보내기</button>
+            <button class="btn" onclick="exportCSV(items)">CSV 내보내기</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>📥 일괄 등록 / 복원</h3></div>
+        <div class="panel-body">
+          <p style="color:var(--text-mute);margin-top:0;">Excel 또는 JSON 백업을 불러옵니다.</p>
+          <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" onchange="importExcel(this.files[0])" style="display:block;padding:8px 0;margin-bottom:8px;">
+          <input type="file" id="importFile" accept="application/json" onchange="importJSON(this.files[0])" style="display:block;padding:8px 0;">
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>📱 모바일 설치</h3></div>
+      <div class="panel-body">
+        <div style="color:var(--text-mute);font-size:12.5px;line-height:1.7;">스마트폰 브라우저의 "홈 화면에 추가"로 앱처럼 사용할 수 있습니다. 카메라 스캔은 HTTPS 환경에서만 정상 동작합니다.</div>
+        <button class="btn" onclick="installPWA()" style="margin-top:10px;">📲 홈 화면 설치</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- maintenance contracts ---------- */
+let maintFilters = {status:"전체", q:""};
+
+function filteredMaintenanceContracts(){
+  return maintenanceContracts.filter(mc=>{
+    if(maintFilters.status!=="전체" && mc.contract_status!==maintFilters.status) return false;
+    if(maintFilters.q){
+      const q = maintFilters.q.toLowerCase();
+      const hay = (mc.site+mc.manager+mc.revenue+mc.equipment_serials+mc.contract_name).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderMaintenance(){
+  const list = filteredMaintenanceContracts();
+  const activeCount = maintenanceContracts.filter(mc=>mc.contract_status==="활성").length;
+  const expiredCount = maintenanceContracts.filter(mc=>mc.contract_status==="만료").length;
+
+  return `
+    <div class="crumb"><b>유지보수 현황</b></div>
+    <div class="page-title">유지보수 계약 관리</div>
+
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card">
+        <div class="top"><span class="label">전체 계약</span>
+          <span class="icon" style="background:var(--st-blue-bg); color:var(--st-blue-text);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+          </span></div>
+        <div class="value">${maintenanceContracts.length}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 건</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="top"><span class="label">활성 계약</span>
+          <span class="icon" style="background:var(--st-green-bg); color:var(--st-green-text);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </span></div>
+        <div class="value">${activeCount}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 건</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="top"><span class="label">만료 / 주의</span>
+          <span class="icon" style="background:var(--st-red-bg); color:var(--st-red-text);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </span></div>
+        <div class="value">${expiredCount}<span style="font-size:13px;font-weight:600;color:var(--text-mute);"> 건</span></div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="f-item"><label>계약상태</label>
+        <select id="maintFilStatus" onchange="onMaintFilterChange()">
+          ${["전체","활성","만료","중단","대기"].map(s=>`<option ${maintFilters.status===s?'selected':''}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
+        <input id="maintFilQ" placeholder="사이트 / 담당자 / 매출처 / 장비 검색" value="${esc(maintFilters.q)}" oninput="onMaintFilterChange()">
+      </div>
+      <button class="btn ghost sm" onclick="resetMaintFilters()">검색 초기화</button>
+    </div>
+
+    <div class="toolbar">
+      <span class="result-count">검색 결과 ${list.length}건</span>
+      <div class="spacer"></div>
+      <button class="btn primary sm" onclick="openMaintRegisterModal()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>계약 추가</button>
+      <button class="btn sm" onclick="exportMaintCSV()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>다운로드</button>
+    </div>
+
+    <div class="panel">
+      <div style="overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th>계약상태</th><th>사이트/고객사</th><th>담당자</th><th>매출처</th><th>계약명</th><th>시작일</th><th>종료일</th><th>담당장비</th>
+        </tr></thead>
+        <tbody>
+          ${list.length? list.map(mc=>`
+            <tr class="row-link" onclick="openMaintDetail('${mc.id}')">
+              <td>${maintStatusBadge(mc.contract_status)}</td>
+              <td class="cell-model">${esc(mc.site)}</td>
+              <td>${esc(mc.manager)}</td>
+              <td>${esc(mc.revenue)}</td>
+              <td>${esc(mc.contract_name)||"-"}</td>
+              <td>${esc(mc.start_date)||"-"}</td>
+              <td style="font-weight:${isContractExpired(mc.end_date)?'700':'400'}; color:${isContractExpired(mc.end_date)?'var(--st-red-text)':'inherit'};">${esc(mc.end_date)||"-"}</td>
+              <td style="font-size:11.5px; color:var(--text-mute);">${esc(mc.equipment_serials)||"-"}</td>
+            </tr>`).join("") : `<tr class="empty-row"><td colspan="8">계약 정보가 없습니다.</td></tr>`}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  `;
+}
+
+function onMaintFilterChange(){
+  maintFilters.status = document.getElementById("maintFilStatus").value;
+  maintFilters.q = document.getElementById("maintFilQ").value;
+  render();
+  setTimeout(()=>{ const el=document.getElementById("maintFilQ"); if(el){ el.focus(); el.selectionStart = el.selectionEnd = el.value.length; } },0);
+}
+
+function resetMaintFilters(){
+  maintFilters = {status:"전체", q:""};
+  render();
+}
+
+function exportMaintCSV(){
+  const headers = ["계약상태","사이트","담당자","매출처","계약명","시작일","종료일","장비","비고"];
+  const rows = maintenanceContracts.map(mc=>[mc.contract_status,mc.site,mc.manager,mc.revenue,mc.contract_name,mc.start_date,mc.end_date,mc.equipment_serials,mc.memo]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  download(`axgate_유지보수_${dstr(0)}.csv`, "﻿"+csv, "text/csv;charset=utf-8;");
+  toast("CSV 파일을 내보냈습니다.");
+}
+
+/* ================= modal: register / edit ================= */
+function openRegisterModal(prefillId){
+  closeSidebar();
+  editingId = prefillId || null;
+  document.getElementById("regTitle").textContent = editingId ? "재고 수정" : "재고 등록";
+  document.getElementById("modelList").innerHTML = MODELS.map(m=>`<option value="${m}">`).join("");
+
+  const it = editingId ? items.find(i=>i.id===editingId) : null;
+  const set = (id,val)=>document.getElementById(id).value = val || "";
+  set("f_model", it? it.model:"");
+  set("f_family", it? it.family: FAMILIES[0]);
+  set("f_serial", it? it.serial:"");
+  set("f_qty", it? it.qty:1);
+  set("f_kind", it? it.kind:"신품");
+  set("f_status", it? it.status:"입고대기");
+  set("f_license", it? it.license:"영구(Perpetual)");
+  set("f_os", it? it.os:"");
+  set("f_mfg", it? it.mfg:"");
+  set("f_in", it? it.in:"");
+  set("f_out", it? it.out:"");
+  set("f_loc", it? it.loc:"");
+  set("f_customer", it? it.customer:"");
+  set("f_memo", it? it.memo:"");
+  const fp=document.getElementById("f_photos"); if(fp) fp.value="";
+  const pp=document.getElementById("photoPreview"); if(pp) pp.innerHTML=(it&&it.photos&&it.photos.length)?it.photos.map(p=>`<img class="photo-thumb" src="${p}">`).join(""):"";
+
+  openModal("regOverlay");
+}
+
+async function saveItem(){
+  const model=document.getElementById('f_model').value.trim();
+  const serial=normalizeSerial(document.getElementById('f_serial').value);
+  if(!model||!serial){toast('모델명과 시리얼번호는 필수입니다.');return;}
+  const duplicate=items.find(i=>normalizeSerial(i.serial)===serial && i.id!==editingId);
+  if(duplicate){toast('이미 등록된 시리얼번호입니다.');return;}
+  const data={model,serial,family:document.getElementById('f_family').value,qty:Number(document.getElementById('f_qty').value||1),kind:document.getElementById('f_kind').value,status:document.getElementById('f_status').value,license:document.getElementById('f_license').value,os:document.getElementById('f_os').value,mfg:document.getElementById('f_mfg').value,in:document.getElementById('f_in').value,out:document.getElementById('f_out').value,loc:document.getElementById('f_loc').value,customer:document.getElementById('f_customer').value,memo:document.getElementById('f_memo').value};
+  const photoFiles=[...(document.getElementById('f_photos')?.files||[])].slice(0,3);
+  if(photoFiles.length) data.photos=await Promise.all(photoFiles.map(compressImage));
+  if(editingId){const idx=items.findIndex(i=>i.id===editingId); items[idx]={...items[idx],...data,updatedAt:new Date().toISOString()}; logs.push({itemId:editingId,when:nowStr(),who:loginSystem.currentUser||'사용자',text:'재고 정보가 수정되었습니다.'});toast('수정되었습니다.');}
+  else{const id=mkId();items.push({id,...data,createdAt:new Date().toISOString()});logs.push({itemId:id,when:nowStr(),who:loginSystem.currentUser||'사용자',text:`재고 등록 (${model} / ${serial})`});toast('등록되었습니다.');}
+  closeModal('regOverlay'); render(); autoSaveToGitHub();
+}
+
+function compressImage(file,maxWidth=1280,quality=.72){
+  return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality));};img.onerror=reject;img.src=r.result;};r.onerror=reject;r.readAsDataURL(file);});
+}
+
+function nowStr(){
+  const d = new Date();
+  const p = n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* ================= modal: maintenance register / edit ================= */
+function openMaintRegisterModal(prefillId){
+  closeSidebar();
+  maintEditingId = prefillId || null;
+  document.getElementById("maintRegTitle").textContent = maintEditingId ? "유지보수 계약 수정" : "유지보수 계약 등록";
+
+  const mc = maintEditingId ? maintenanceContracts.find(m=>m.id===maintEditingId) : null;
+  const set = (id,val)=>document.getElementById(id).value = val || "";
+  set("m_site", mc? mc.site:"");
+  set("m_manager", mc? mc.manager:"");
+  set("m_contract_name", mc? mc.contract_name:"");
+  set("m_revenue", mc? mc.revenue:"");
+  set("m_start_date", mc? mc.start_date:"");
+  set("m_end_date", mc? mc.end_date:"");
+  set("m_contract_status", mc? mc.contract_status:"활성");
+  set("m_contract_type", mc? mc.contract_type:"AS/유지보수");
+  set("m_equipment_serials", mc? mc.equipment_serials:"");
+  set("m_memo", mc? mc.memo:"");
+
+  openModal("maintRegOverlay");
+}
+
+function saveMaintenance(){
+  const site = document.getElementById("m_site").value.trim();
+  const manager = document.getElementById("m_manager").value.trim();
+  const start_date = document.getElementById("m_start_date").value.trim();
+  const end_date = document.getElementById("m_end_date").value.trim();
+
+  if(!site || !manager || !start_date || !end_date){
+    toast("필수 항목을 모두 입력해주세요.");
+    return;
+  }
+
+  const data = {
+    site, manager,
+    contract_name: document.getElementById("m_contract_name").value,
+    revenue: document.getElementById("m_revenue").value,
+    start_date,
+    end_date,
+    contract_status: document.getElementById("m_contract_status").value,
+    contract_type: document.getElementById("m_contract_type").value,
+    equipment_serials: document.getElementById("m_equipment_serials").value,
+    memo: document.getElementById("m_memo").value,
+  };
+
+  if(maintEditingId){
+    const idx = maintenanceContracts.findIndex(m=>m.id===maintEditingId);
+    maintenanceContracts[idx] = {...maintenanceContracts[idx], ...data};
+    toast("수정되었습니다.");
+  } else {
+    const id = mkMaintId();
+    maintenanceContracts.push({id, ...data});
+    toast("등록되었습니다.");
+  }
+  closeModal("maintRegOverlay");
+  render();
+  autoSaveToGitHub();
+}
+
+function openMaintDetail(id){
+  maintDetailId = id;
+  const mc = maintenanceContracts.find(m=>m.id===id);
+  if(!mc) return;
+  document.getElementById("maintDetTitle").textContent = mc.site + " · " + mc.manager;
+
+  const serials = mc.equipment_serials.split(",").map(s=>s.trim()).filter(s=>s);
+  const relatedItems = items.filter(it=>serials.includes(it.serial));
+
+  document.getElementById("maintDetInfo").innerHTML = `
+    <div style="margin-bottom:14px;">${maintStatusBadge(mc.contract_status)} <span style="color:var(--text-mute); font-size:12.5px; margin-left:8px;">${esc(mc.contract_type)}</span></div>
+    <div class="detail-grid">
+      <div class="kv"><span class="k">사이트/고객사</span><span class="v">${esc(mc.site)}</span></div>
+      <div class="kv"><span class="k">팀별 담당자</span><span class="v">${esc(mc.manager)}</span></div>
+      <div class="kv"><span class="k">매출처</span><span class="v">${esc(mc.revenue)||"-"}</span></div>
+      <div class="kv"><span class="k">계약명</span><span class="v">${esc(mc.contract_name)||"-"}</span></div>
+      <div class="kv"><span class="k">시작일</span><span class="v">${esc(mc.start_date)}</span></div>
+      <div class="kv"><span class="k">종료일</span><span class="v" style="color:${isContractExpired(mc.end_date)?'var(--st-red-text)':'inherit'}; font-weight:${isContractExpired(mc.end_date)?'700':'400'};">${esc(mc.end_date)} ${isContractExpired(mc.end_date)?'(만료됨)':''}</span></div>
+    </div>
+    ${mc.equipment_serials? `
+      <div style="margin-top:16px; padding-top:16px; border-top:1px dashed var(--border);">
+        <div style="font-size:13px; font-weight:700; margin-bottom:10px;">담당 장비</div>
+        <div style="font-size:12.8px;">
+          ${relatedItems.length? relatedItems.map(it=>`
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border);">
+              <div>
+                <div style="font-weight:600;">${esc(it.model)}</div>
+                <div style="color:var(--text-mute); font-size:11.5px; font-family:ui-monospace,monospace;">${esc(it.serial)}</div>
+              </div>
+              <div style="text-align:right;">
+                ${statusBadge(it.status)}
+              </div>
+            </div>
+          `).join("") : `<div style="color:var(--text-faint);">등록된 장비 없음</div>`}
+        </div>
+      </div>
+    `:""}
+    ${mc.memo? `<div style="margin-top:14px; background:var(--bg); border-radius:8px; padding:10px 12px; font-size:12.8px; color:var(--text-mute);">${esc(mc.memo)}</div>`:""}`
+  ;
+  openModal("maintDetOverlay");
+}
+
+function editFromMaintDetail(){
+  const id = maintDetailId;
+  closeModal("maintDetOverlay");
+  openMaintRegisterModal(id);
+}
+
+function deleteCurrentMaintenance(){
+  if(!confirm("이 유지보수 계약을 삭제하시겠습니까?")) return;
+  maintenanceContracts = maintenanceContracts.filter(m=>m.id!==maintDetailId);
+  closeModal("maintDetOverlay");
+  toast("삭제되었습니다.");
+  render();
+  autoSaveToGitHub();
+}
+
+/* ================= modal: detail ================= */
+function openDetail(id){
+  detailId = id;
+  const it = items.find(i=>i.id===id);
+  if(!it) return;
+  document.getElementById("detTitle").textContent = it.model + " · " + it.serial;
+  document.getElementById("detInfo").innerHTML = `
+    <div style="margin-bottom:14px;">${statusBadge(it.status)} <span style="color:var(--text-mute); font-size:12.5px; margin-left:8px;">${esc(it.kind)} · ${esc(it.family)}</span></div>
+    <div class="detail-grid">
+      <div class="kv"><span class="k">모델명</span><span class="v">${esc(it.model)}</span></div>
+      <div class="kv"><span class="k">시리얼번호</span><span class="v">${esc(it.serial)}</span></div>
+      <div class="kv"><span class="k">수량</span><span class="v">${fmtNum(it.qty)}</span></div>
+      <div class="kv"><span class="k">라이선스</span><span class="v">${esc(it.license)}</span></div>
+      <div class="kv"><span class="k">OS 정보</span><span class="v">${esc(it.os)||"-"}</span></div>
+      <div class="kv"><span class="k">제조일</span><span class="v">${esc(it.mfg)||"-"}</span></div>
+      <div class="kv"><span class="k">입고일</span><span class="v">${esc(it.in)||"-"}</span></div>
+      <div class="kv"><span class="k">출고일</span><span class="v">${esc(it.out)||"-"}</span></div>
+      <div class="kv"><span class="k">최종위치</span><span class="v">${esc(it.loc)||"-"}</span></div>
+      <div class="kv"><span class="k">고객사/담당</span><span class="v">${esc(it.customer)||"-"}</span></div>
+    </div>
+    ${it.photos&&it.photos.length?`<div style="margin-top:16px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;">장비 사진</div><div class="photo-grid">${it.photos.map(p=>`<img class="photo-thumb" src="${p}" onclick="window.open(this.src,'_blank')">`).join("")}</div></div>`:""}
+    ${it.memo? `<div style="margin-top:14px; background:var(--bg); border-radius:8px; padding:10px 12px; font-size:12.8px; color:var(--text-mute);">${esc(it.memo)}</div>`:""}
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;"><button class="btn primary" onclick="showItemQR('${it.id}')">▦ QR 라벨</button><button class="btn" onclick="printItemQR('${it.id}')">🖨 QR 인쇄</button></div>
+  `;
+  switchTab("info");
+  renderLogThread();
+  openModal("detOverlay");
+}
+function switchTab(t){
+  document.querySelectorAll(".tab").forEach(el=>el.classList.toggle("active", el.dataset.tab===t));
+  document.getElementById("detInfo").classList.toggle("hidden", t!=="info");
+  document.getElementById("detLog").classList.toggle("hidden", t!=="log");
+}
+function renderLogThread(){
+  const list = logs.filter(l=>l.itemId===detailId).sort((a,b)=> a.when<b.when?1:-1);
+  document.getElementById("logThread").innerHTML = list.length? list.map(l=>`
+    <li><div class="row1"><span class="who">${esc(l.who)}</span><span class="when">${esc(l.when)}</span></div>${esc(l.text)}</li>
+  `).join("") : `<li style="color:var(--text-faint);">등록된 이력이 없습니다.</li>`;
+}
+function addLog(){
+  const input = document.getElementById("logInput");
+  const text = input.value.trim();
+  if(!text) return;
+  logs.push({itemId:detailId, when: nowStr(), who:"송대훈 이사", text});
+  input.value = "";
+  renderLogThread();
+  autoSaveToGitHub();
+}
+function editFromDetail(){
+  const id = detailId;
+  closeModal("detOverlay");
+  openRegisterModal(id);
+}
+function deleteCurrentDetail(){
+  if(!confirm("이 재고 항목을 삭제하시겠습니까?")) return;
+  items = items.filter(i=>i.id!==detailId);
+  logs = logs.filter(l=>l.itemId!==detailId);
+  closeModal("detOverlay");
+  toast("삭제되었습니다.");
+  render();
+  autoSaveToGitHub();
+}
+
+function showItemQR(id){
+  const it=items.find(x=>x.id===id); if(!it) return;
+  let old=document.getElementById('qrOverlay');
+  if(old) old.remove();
+  const ov=document.createElement('div'); ov.id='qrOverlay'; ov.className='overlay show'; ov.innerHTML=`<div class="modal" style="max-width:360px;"><div class="modal-head"><h3>QR 자산 라벨</h3><button class="modal-close" onclick="this.closest('.overlay').remove()">&times;</button></div><div class="modal-body"><div class="qr-card"><div style="font-weight:800;font-size:16px;">${esc(it.model)}</div><div style="font-family:ui-monospace;margin-top:4px;">${esc(it.serial)}</div><div id="qrPrintCanvas" style="margin-top:12px;"></div></div></div><div class="modal-foot"><button class="btn primary" onclick="printItemQR('${it.id}')">인쇄</button><button class="btn" onclick="this.closest('.overlay').remove()">닫기</button></div></div>`;
+  document.body.appendChild(ov); new QRCode(document.getElementById('qrPrintCanvas'),{text:it.serial,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
+}
+function printItemQR(id){
+  const it=items.find(x=>x.id===id); if(!it) return;
+  const w=window.open('','_blank','width=420,height=520');
+  w.document.write(`<html><head><title>QR ${esc(it.serial)}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(it.model)}</h2><div>${esc(it.serial)}</div><div id="q" style="margin:20px auto;width:180px"></div><div style="font-size:12px">AXGATE INVENTORY</div><script>new QRCode(document.getElementById('q'),{text:${JSON.stringify(it.serial)},width:180,height:180});window.print();<\\/script></body></html>`); w.document.close();
+}
+
+/* ================= modal generic ================= */
+function openModal(id){ document.getElementById(id).classList.add("show"); }
+function closeModal(id){ document.getElementById(id).classList.remove("show"); }
+document.querySelectorAll(".overlay").forEach(ov=>{
+  ov.addEventListener("click", e=>{ if(e.target===ov) ov.classList.remove("show"); });
+});
+
+/* ================= export / import ================= */
+function download(filename, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportCSV(list){
+  const headers = ["상태","모델명","시리얼번호","재고구분","라이선스","OS정보","제조일","입고일","출고일","최종위치","수량","고객사","비고"];
+  const rows = list.map(it=>[it.status,it.model,it.serial,it.kind,it.license,it.os,it.mfg,it.in,it.out,it.loc,it.qty,it.customer,it.memo]);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  download(`axgate_재고_${dstr(0)}.csv`, "﻿"+csv, "text/csv;charset=utf-8;");
+  toast("CSV 파일을 내보냈습니다.");
+}
+/* ================= GitHub Worker integration ================= */
+let gitHubState = { isAuthed:false, workerUrl:'', owner:'', repo:'', status:'' };
+const DEFAULT_WORKER_URL = '';
+
+function getWorkerConfig(){
+  return {
+    workerUrl: localStorage.getItem('axgateWorkerUrl') || DEFAULT_WORKER_URL,
+    owner: localStorage.getItem('githubOwner') || '',
+    repo: localStorage.getItem('githubRepo') || ''
+  };
+}
+
+function initGitHub(){
+  const current = getWorkerConfig();
+  const workerUrl = prompt('Cloudflare Worker 주소를 입력하세요.\n예: https://axgate-inventory-api.xxx.workers.dev', current.workerUrl || '');
+  if(!workerUrl) return;
+  const owner = prompt('GitHub 사용자/조직명', current.owner || '');
+  if(!owner) return;
+  const repo = prompt('GitHub 저장소명', current.repo || '');
+  if(!repo) return;
+  gitHubState.workerUrl = workerUrl.trim().replace(/\/$/,'');
+  gitHubState.owner = owner.trim();
+  gitHubState.repo = repo.trim();
+  gitHubState.isAuthed = true;
+  gitHubState.status = 'Worker 설정 완료';
+  localStorage.setItem('axgateWorkerUrl', gitHubState.workerUrl);
+  localStorage.setItem('githubOwner', gitHubState.owner);
+  localStorage.setItem('githubRepo', gitHubState.repo);
+  toast('Worker 연결 설정이 저장되었습니다.');
+  updateGitHubStatus('Worker: '+gitHubState.workerUrl);
+  render();
+  loadFromGitHubOnStart();
+}
+
+function disconnectGitHub(){
+  if(!confirm('Worker 연결 설정을 삭제하시겠습니까?')) return;
+  gitHubState={isAuthed:false,workerUrl:'',owner:'',repo:'',status:''};
+  localStorage.removeItem('axgateWorkerUrl');
+  localStorage.removeItem('githubOwner');
+  localStorage.removeItem('githubRepo');
+  toast('연결 설정이 삭제되었습니다.');
+  render();
+}
+
+async function workerRequest(payload){
+  if(!gitHubState.workerUrl) throw new Error('Worker 주소가 설정되지 않았습니다.');
+  const res=await fetch(gitHubState.workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok || data.success===false) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+async function saveWorkerFile(fileName,data){
+  return workerRequest({action:'save',file:fileName,data});
+}
+
+async function loadWorkerFile(fileName){
+  if(!gitHubState.workerUrl) throw new Error('Worker 주소가 설정되지 않았습니다.');
+  const res=await fetch(gitHubState.workerUrl+'?file='+encodeURIComponent(fileName));
+  const data=await res.json();
+  if(!res.ok || data.success===false) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+async function pushToGitHub(){
+  if(!gitHubState.workerUrl){ initGitHub(); return; }
+  try{
+    await Promise.all([
+      saveWorkerFile('inven',{items,logs}),
+      saveWorkerFile('maint',{maintenanceContracts})
+    ]);
+    const stamp=new Date().toLocaleString('ko-KR');
+    updateGitHubStatus('마지막 저장: '+stamp);
+    toast('GitHub에 저장되었습니다.');
+  }catch(err){
+    console.error(err); toast('저장 실패: '+err.message);
+  }
+}
+
+let saveDebounceTimer=null;
+function autoSaveToGitHub(){
+  clearTimeout(saveDebounceTimer);
+  localStorage.setItem('axgateSnapshot',JSON.stringify({items,logs,maintenanceContracts,savedAt:new Date().toISOString()}));
+  if(!gitHubState.workerUrl) return;
+  saveDebounceTimer=setTimeout(()=>pushToGitHub(),800);
+}
+
+async function pullFromGitHub(){ await loadFromGitHubOnStart(true); }
+
+async function loadFromGitHubOnStart(showToast=false){
+  const cfg=getWorkerConfig();
+  if(!cfg.workerUrl){
+    const snapshot=localStorage.getItem('axgateSnapshot');
+    if(snapshot){ try{ const d=JSON.parse(snapshot); items=d.items||[]; logs=d.logs||[]; maintenanceContracts=d.maintenanceContracts||[]; seq=items.length+1; maintSeq=maintenanceContracts.length+1; }catch{} }
+    render();
+    return;
+  }
+  gitHubState={...gitHubState,...cfg,isAuthed:true};
+  try{
+    const [inv,maint]=await Promise.all([loadWorkerFile('inven'),loadWorkerFile('maint')]);
+    items=inv.items||[]; logs=inv.logs||[]; maintenanceContracts=maint.maintenanceContracts||[];
+    seq=Math.max(1,...items.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1;
+    maintSeq=Math.max(1,...maintenanceContracts.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1;
+    localStorage.setItem('axgateSnapshot',JSON.stringify({items,logs,maintenanceContracts,savedAt:new Date().toISOString()}));
+    updateGitHubStatus('마지막 불러오기: '+new Date().toLocaleString('ko-KR'));
+    if(showToast) toast('GitHub에서 데이터를 불러왔습니다.');
+    render();
+  }catch(err){
+    console.error('Worker load error',err);
+    if(showToast) toast('불러오기 실패: '+err.message);
+    const snapshot=localStorage.getItem('axgateSnapshot');
+    if(snapshot){ try{const d=JSON.parse(snapshot);items=d.items||[];logs=d.logs||[];maintenanceContracts=d.maintenanceContracts||[];}catch{} }
+    render();
+  }
+}
+
+function updateGitHubStatus(msg){
+  gitHubState.status=msg;
+  const el=document.getElementById('githubStatus');
+  if(el) el.innerText=msg;
+}
+
+function exportJSON(){
+  download(`axgate_재고백업_${dstr(0)}.json`, JSON.stringify({items,logs,maintenanceContracts}, null, 2), 'application/json');
+  toast('JSON 백업을 내보냈습니다.');
+}
+
+function exportExcel(){
+  if(typeof XLSX==='undefined'){toast('Excel 라이브러리를 불러오지 못했습니다.');return;}
+  const rows=items.map(it=>({상태:it.status,모델명:it.model,시리얼번호:it.serial,제품군:it.family,재고구분:it.kind,라이선스:it.license,OS정보:it.os,제조일:it.mfg,입고일:it.in,출고일:it.out,최종위치:it.loc,수량:it.qty,고객사:it.customer,비고:it.memo}));
+  const wb=XLSX.utils.book_new(); const ws=XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb,ws,'재고');
+  const maint=maintenanceContracts.map(m=>({계약상태:m.contract_status,사이트:m.site,담당자:m.manager,매출처:m.revenue,계약명:m.contract_name,시작일:m.start_date,종료일:m.end_date,장비:m.equipment_serials,비고:m.memo}));
+  const ws2=XLSX.utils.json_to_sheet(maint); XLSX.utils.book_append_sheet(wb,ws2,'유지보수');
+  XLSX.writeFile(wb,`axgate_재고_${dstr(0)}.xlsx`); toast('Excel 파일을 내보냈습니다.');
+}
+
+function importExcel(file){
+  if(!file) return;
+  if(typeof XLSX==='undefined'){toast('Excel 라이브러리를 불러오지 못했습니다.');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      let count=0;
+      rows.forEach(r=>{
+        const serial=String(r['시리얼번호']||r['Serial']||r['serial']||'').trim(); if(!serial) return;
+        const existing=items.find(x=>x.serial===serial);
+        const data={model:String(r['모델명']||r['Model']||''),serial,family:String(r['제품군']||'기타'),qty:Number(r['수량']||1),kind:String(r['재고구분']||'신품'),status:String(r['상태']||'입고대기'),license:String(r['라이선스']||'해당없음'),os:String(r['OS정보']||''),mfg:String(r['제조일']||''),in:String(r['입고일']||''),out:String(r['출고일']||''),loc:String(r['최종위치']||''),customer:String(r['고객사']||''),memo:String(r['비고']||'')};
+        if(existing) Object.assign(existing,data); else items.push({id:mkId(),...data}); count++;
+      });
+      seq=Math.max(1,...items.map(x=>parseInt(String(x.id).replace(/\D/g,''),10)||0))+1; render(); autoSaveToGitHub(); toast(`${count}건을 Excel에서 반영했습니다.`);
+    }catch(err){console.error(err);toast('Excel 파일을 읽을 수 없습니다.');}
+  }; reader.readAsArrayBuffer(file);
+}
+
+function importJSON(file){
+  if(!file) return;
+  const reader=new FileReader(); reader.onload=e=>{
+    try{ const data=JSON.parse(e.target.result); if(!Array.isArray(data.items)) throw new Error('invalid'); items=data.items; logs=data.logs||[]; maintenanceContracts=data.maintenanceContracts||[]; seq=Math.max(1,...items.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1; maintSeq=Math.max(1,...maintenanceContracts.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1; render(); autoSaveToGitHub(); toast('JSON 백업을 불러왔습니다.'); }catch(err){toast('JSON 백업 형식이 올바르지 않습니다.');}
+  }; reader.readAsText(file);
+}
+
+/* ================= global search ================= */
+document.getElementById("globalSearch").addEventListener("keydown", e=>{
+  if(e.key==="Enter") runGlobalSearch(e.target.value);
+});
+document.getElementById("globalSearchMobile").addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    runGlobalSearch(e.target.value);
+    document.getElementById("mobileSearchRow").classList.remove("show");
+  }
+});
+
+function bindDynamicHandlers(){ /* reserved for future dynamic bindings */ }
+
+/* ================= login functions ================= */
+const ROLE_NAMES = {
+  5: '기본 사용자',
+  10: '표준 사용자',
+  14: '고급 사용자',
+  15: '풀 액세스 사용자',
+  99: '관리자'
+};
+
+const loginSystem = {
+  users: {},
+  isLoggedIn: false,
+  currentUser: null,
+  isAdmin: false,
+  userRole: null,
+
+  roleNames: ROLE_NAMES,
+
+  initUsers() {
+    const saved = localStorage.getItem('axgateUsers');
+    if(saved) {
+      this.users = JSON.parse(saved);
+    } else {
+      // 초기 설정: 기본 관리자 계정은 사용자가 설정
+      this.users = {};
+      this.saveUsers();
+    }
+  },
+
+  saveUsers() {
+    localStorage.setItem('axgateUsers', JSON.stringify(this.users));
+  },
+
+  addUser(username, password, role) {
+    if(this.users[username]) return {success: false, message: '이미 존재하는 사용자명입니다'};
+
+    // 관리자는 최대 2명
+    const adminCount = Object.values(this.users).filter(u => u.role === 99).length;
+    if(role === 99 && adminCount >= 2) {
+      return {success: false, message: '관리자는 최대 2명까지만 설정할 수 있습니다'};
+    }
+
+    this.users[username] = {password, role: parseInt(role)};
+    this.saveUsers();
+    return {success: true};
+  },
+
+  updateUser(username, password, role) {
+    if(!this.users[username]) return {success: false, message: '사용자를 찾을 수 없습니다'};
+
+    // 관리자 수 체크 (기존 관리자가 아닌데 관리자로 변경하는 경우)
+    if(role === 99 && this.users[username].role !== 99) {
+      const adminCount = Object.values(this.users).filter(u => u.role === 99).length;
+      if(adminCount >= 2) {
+        return {success: false, message: '관리자는 최대 2명까지만 설정할 수 있습니다'};
+      }
+    }
+
+    this.users[username] = {password, role: parseInt(role)};
+    this.saveUsers();
+    return {success: true};
+  },
+
+  deleteUser(username) {
+    if(!this.users[username]) return false;
+    delete this.users[username];
+    this.saveUsers();
+    return true;
+  },
+
+  getUsers() {
+    return Object.keys(this.users).map(u => ({
+      username: u,
+      password: this.users[u].password,
+      role: this.users[u].role,
+      roleName: this.roleNames[this.users[u].role]
+    }));
+  }
+};
+
+function handleLogin(){
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+
+  errorEl.classList.remove('show');
+  errorEl.innerText = '';
+
+  if(!username){
+    document.getElementById('usernameError').classList.add('show');
+    document.getElementById('usernameError').innerText = '사용자명을 입력하세요';
+    return;
+  }
+  document.getElementById('usernameError').classList.remove('show');
+
+  if(!password){
+    document.getElementById('passwordError').classList.add('show');
+    document.getElementById('passwordError').innerText = '비밀번호를 입력하세요';
+    return;
+  }
+  document.getElementById('passwordError').classList.remove('show');
+
+  const user = loginSystem.users[username];
+  if(user && user.password === password){
+    loginSystem.isLoggedIn = true;
+    loginSystem.currentUser = username;
+    loginSystem.userRole = user.role;
+    loginSystem.isAdmin = (user.role === 99);
+    localStorage.setItem('axgateUser', username);
+    document.getElementById('currentUsername').innerText = username + ' (' + ROLE_NAMES[user.role] + ')';
+
+    // Show admin menu if admin
+    if(loginSystem.isAdmin) {
+      document.getElementById('adminMenu').style.display = 'block';
+    } else {
+      document.getElementById('adminMenu').style.display = 'none';
+    }
+
+    closeLoginModal();
+    render();
+  } else {
+    errorEl.classList.add('show');
+    errorEl.innerText = '사용자명 또는 비밀번호가 잘못되었습니다';
+  }
+}
+
+function handleLogout(){
+  loginSystem.isLoggedIn = false;
+  loginSystem.currentUser = null;
+  localStorage.removeItem('axgateUser');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('usernameError').classList.remove('show');
+  document.getElementById('passwordError').classList.remove('show');
+  openLoginModal();
+}
+
+function openLoginModal(){
+  document.getElementById('loginOverlay').classList.add('show');
+  document.getElementById('appMain').style.display = 'none';
+  document.querySelector('.sidebar').style.display = 'none';
+  document.querySelector('.topbar').style.display = 'none';
+}
+
+function closeLoginModal(){
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('appMain').style.display = 'block';
+  document.querySelector('.sidebar').style.display = 'block';
+  document.querySelector('.topbar').style.display = 'flex';
+}
+
+function openAdminSetup(){
+  document.getElementById('adminSetupOverlay').classList.add('show');
+  document.getElementById('appMain').style.display = 'none';
+  document.querySelector('.sidebar').style.display = 'none';
+  document.querySelector('.topbar').style.display = 'none';
+  document.getElementById('loginOverlay').classList.remove('show');
+}
+
+function saveAdminSetup(){
+  const username = document.getElementById('setupUsername').value.trim();
+  const password = document.getElementById('setupPassword').value;
+  const password2 = document.getElementById('setupPassword2').value;
+  const errorEl = document.getElementById('setupError');
+
+  errorEl.style.display = 'none';
+  errorEl.innerText = '';
+
+  if(!username){
+    errorEl.style.display = 'block';
+    errorEl.innerText = '관리자 사용자명을 입력하세요';
+    return;
+  }
+
+  if(username.length < 3){
+    errorEl.style.display = 'block';
+    errorEl.innerText = '사용자명은 3자 이상이어야 합니다';
+    return;
+  }
+
+  if(!password){
+    errorEl.style.display = 'block';
+    errorEl.innerText = '비밀번호를 입력하세요';
+    return;
+  }
+
+  if(password.length < 6){
+    errorEl.style.display = 'block';
+    errorEl.innerText = '비밀번호는 6자 이상이어야 합니다';
+    return;
+  }
+
+  if(password !== password2){
+    errorEl.style.display = 'block';
+    errorEl.innerText = '비밀번호가 일치하지 않습니다';
+    return;
+  }
+
+  // 관리자 계정 생성
+  loginSystem.addUser(username, password, 99);
+  toast('관리자 계정이 생성되었습니다');
+
+  // 관리자로 자동 로그인
+  loginSystem.isLoggedIn = true;
+  loginSystem.currentUser = username;
+  loginSystem.userRole = 99;
+  loginSystem.isAdmin = true;
+  localStorage.setItem('axgateUser', username);
+  document.getElementById('currentUsername').innerText = username + ' (관리자)';
+  document.getElementById('adminMenu').style.display = 'block';
+
+  // 오버레이 닫기
+  document.getElementById('adminSetupOverlay').classList.remove('show');
+  document.getElementById('appMain').style.display = 'block';
+  document.querySelector('.sidebar').style.display = 'block';
+  document.querySelector('.topbar').style.display = 'flex';
+
+  render();
+  autoSaveToGitHub(); // 초기 설정 후 GitHub에 저장
+}
+
+/* ================= user management ================= */
+let currentEditingUser = null;
+
+function openUserManagement(){
+  renderUserList();
+  document.getElementById('userMgmtOverlay').classList.add('show');
+}
+
+function renderUserList(){
+  const list = document.getElementById('userList');
+  const users = loginSystem.getUsers();
+
+  list.innerHTML = users.map(u => `
+    <li>
+      <div class="user-info">
+        <div class="username">${u.username}</div>
+        <div class="role">${u.roleName}</div>
+      </div>
+      <div class="actions">
+        <button class="btn sm" onclick="openEditUserModal('${u.username}')">수정</button>
+        <button class="btn sm danger" onclick="deleteUserConfirm('${u.username}')">삭제</button>
+      </div>
+    </li>
+  `).join('');
+}
+
+function openAddUserModal(){
+  currentEditingUser = null;
+  document.getElementById('userEditTitle').innerText = '사용자 추가';
+  document.getElementById('userEditUsername').value = '';
+  document.getElementById('userEditPassword').value = '';
+  document.getElementById('userEditRole').value = '5';
+  document.getElementById('userEditUsername').disabled = false;
+  document.getElementById('userEditError').style.display = 'none';
+  document.getElementById('userEditOverlay').classList.add('show');
+}
+
+function openEditUserModal(username){
+  currentEditingUser = username;
+  const user = loginSystem.users[username];
+  document.getElementById('userEditTitle').innerText = `${username} 수정`;
+  document.getElementById('userEditUsername').value = username;
+  document.getElementById('userEditUsername').disabled = true;
+  document.getElementById('userEditPassword').value = user.password || '';
+  document.getElementById('userEditRole').value = user.role || '5';
+  document.getElementById('userEditError').style.display = 'none';
+  document.getElementById('userEditOverlay').classList.add('show');
+}
+
+function saveUserEdit(){
+  const username = document.getElementById('userEditUsername').value.trim();
+  const password = document.getElementById('userEditPassword').value;
+  const role = document.getElementById('userEditRole').value;
+  const errorEl = document.getElementById('userEditError');
+
+  if(!username || !password){
+    errorEl.style.display = 'block';
+    errorEl.innerText = '사용자명과 비밀번호를 모두 입력하세요';
+    return;
+  }
+
+  let result;
+  if(currentEditingUser) {
+    // Edit mode
+    result = loginSystem.updateUser(currentEditingUser, password, role);
+    if(result.success) {
+      toast(currentEditingUser + ' 사용자가 수정되었습니다');
+    }
+  } else {
+    // Add mode
+    result = loginSystem.addUser(username, password, role);
+    if(result.success) {
+      toast(username + ' 사용자가 추가되었습니다');
+    }
+  }
+
+  if(!result.success) {
+    errorEl.style.display = 'block';
+    errorEl.innerText = result.message;
+    return;
+  }
+
+  closeModal('userEditOverlay');
+  renderUserList();
+}
+
+function deleteUserConfirm(username){
+  if(confirm(username + ' 사용자를 삭제하시겠습니까?')){
+    loginSystem.deleteUser(username);
+    toast(username + ' 사용자가 삭제되었습니다');
+    renderUserList();
+  }
+}
+
+/* ================= barcode / QR scanner ================= */
+let barcodeScanning=false;
+let html5QrCode=null;
+let lastScannedCode='';
+let lastScanAt=0;
+
+function openBarcodeScanner(){
+  document.getElementById('barcodeScannerOverlay').classList.add('show');
+  document.getElementById('scannerResult').innerHTML='<div class="scanner-info">스캔 시작을 눌러 카메라 권한을 허용하세요.</div>';
+}
+function closeBarcodeScanner(){ stopBarcodeScanner(); document.getElementById('barcodeScannerOverlay').classList.remove('show'); }
+
+function normalizeSerial(code){ return String(code||'').trim().replace(/\s+/g,'').toUpperCase(); }
+
+async function startBarcodeScanner(){
+  if(barcodeScanning) return;
+  if(typeof Html5Qrcode==='undefined'){ alert('스캐너 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.'); return; }
+  barcodeScanning=true;
+  document.getElementById('startScanBtn').style.display='none';
+  document.getElementById('stopScanBtn').style.display='block';
+  document.getElementById('scannerResult').innerHTML='<div class="scanner-info">🔄 스캔 중... 카메라 권한을 허용하세요.</div>';
+  html5QrCode=new Html5Qrcode('barcode-reader');
+  const formats=[];
+  const F=window.Html5QrcodeSupportedFormats||{};
+  ['QR_CODE','CODE_128','CODE_39','CODE_93','EAN_13','EAN_8','UPC_A','UPC_E','ITF','CODABAR'].forEach(k=>{if(F[k]!=null)formats.push(F[k]);});
+  try{
+    await html5QrCode.start({facingMode:{ideal:'environment'}},{fps:10,qrbox:{width:260,height:180},formatsToSupport:formats.length?formats:undefined},handleScanSuccess,()=>{});
+  }catch(err){
+    console.error(err); barcodeScanning=false; document.getElementById('startScanBtn').style.display='block'; document.getElementById('stopScanBtn').style.display='none'; document.getElementById('scannerResult').innerHTML=`<div class="scanner-result error">카메라를 시작할 수 없습니다.<br><small>${esc(err.message||String(err))}</small></div>`;
+  }
+}
+
+async function handleScanSuccess(decodedText){
+  const code=normalizeSerial(decodedText); if(!code) return;
+  const now=Date.now(); if(code===lastScannedCode && now-lastScanAt<2500) return;
+  lastScannedCode=code; lastScanAt=now;
+  const item=items.find(i=>normalizeSerial(i.serial)===code);
+  if(item){
+    document.getElementById('scannerResult').innerHTML=`<div class="scanner-result">✅ ${esc(code)} 인식 완료</div><button class="btn primary" style="width:100%;" onclick="stopBarcodeScanner();closeBarcodeScanner();openDetail('${item.id}')">상세보기</button>`;
+  }else{
+    document.getElementById('scannerResult').innerHTML=`<div class="scanner-result">🆕 신규 시리얼: <b>${esc(code)}</b></div><button class="btn primary" style="width:100%;" onclick="useScannedSerialForRegister('${esc(code).replace(/'/g,"\\'")}')">신규 재고 등록</button>`;
+  }
+}
+
+function useScannedSerialForRegister(code){
+  stopBarcodeScanner(); closeBarcodeScanner(); openRegisterModal(); document.getElementById('f_serial').value=normalizeSerial(code); toast('스캔한 시리얼번호를 등록창에 넣었습니다.');
+}
+
+async function stopBarcodeScanner(){
+  if(!barcodeScanning && !html5QrCode) return;
+  barcodeScanning=false;
+  try{if(html5QrCode && html5QrCode.isScanning) await html5QrCode.stop();}catch(e){}
+  try{html5QrCode && await html5QrCode.clear();}catch(e){}
+  html5QrCode=null;
+  document.getElementById('startScanBtn').style.display='block'; document.getElementById('stopScanBtn').style.display='none';
+}
+
+/* ================= init ================= */
+loginSystem.initUsers();
+const savedUser=localStorage.getItem('axgateUser');
+const hasUsers=Object.keys(loginSystem.users).length>0;
+if(!hasUsers){ openAdminSetup(); }
+else if(savedUser && loginSystem.users[savedUser]){
+  const user=loginSystem.users[savedUser]; loginSystem.isLoggedIn=true; loginSystem.currentUser=savedUser; loginSystem.userRole=user.role; loginSystem.isAdmin=(user.role===99);
+  document.getElementById('currentUsername').innerText=savedUser+' ('+ROLE_NAMES[user.role]+')';
+  document.getElementById('adminMenu').style.display=loginSystem.isAdmin?'block':'none'; closeLoginModal();
+}else{ openLoginModal(); }
+
+const cfg=getWorkerConfig();
+if(cfg.workerUrl){ gitHubState={...gitHubState,...cfg,isAuthed:true}; loadFromGitHubOnStart(false); }
+if(loginSystem.isLoggedIn){ document.querySelector('.side-item[data-view="dashboard"]').classList.add('active'); render(); }
+
+// Photo preview binding
+const photoInput=document.getElementById('f_photos');
+if(photoInput){ photoInput.addEventListener('change',async()=>{ const preview=document.getElementById('photoPreview'); preview.innerHTML=''; const files=[...photoInput.files].slice(0,3); for(const f of files){ const url=URL.createObjectURL(f); const img=document.createElement('img'); img.className='photo-thumb'; img.src=url; preview.appendChild(img); } }); }
+
+// PWA install support
+let deferredPwaPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPwaPrompt=e;document.querySelector('.install-pwa')?.classList.add('show');});
+async function installPWA(){ if(!deferredPwaPrompt){toast('브라우저 메뉴의 "홈 화면에 추가"를 사용하세요.');return;} deferredPwaPrompt.prompt(); await deferredPwaPrompt.userChoice; deferredPwaPrompt=null; }
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
+</script>
+<button class="btn primary install-pwa" onclick="installPWA()">📲 앱으로 설치</button>
+</body>
 </html>

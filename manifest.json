@@ -1,0 +1,10 @@
+{
+  "name":"AXGATE 재고관리",
+  "short_name":"재고관리",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f4f5f7",
+  "theme_color":"#ea5b26",
+  "lang":"ko-KR",
+  "icons":[]
+}
