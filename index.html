@@ -2216,13 +2216,22 @@ function handleLogin(){
 function handleLogout(){
   loginSystem.isLoggedIn = false;
   loginSystem.currentUser = null;
+  loginSystem.userRole = null;
+  loginSystem.isAdmin = false;
   localStorage.removeItem('axgateUser');
+
+  // 로그인 폼 초기화
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginError').classList.remove('show');
-  document.getElementById('usernameError').classList.remove('show');
-  document.getElementById('passwordError').classList.remove('show');
+  document.getElementById('loginError').innerText = '';
+
+  console.log("✅ 로그아웃됨");
+  toast("로그아웃되었습니다.");
+
+  // 로그인 화면 표시
   openLoginModal();
+  render();
 }
 
 function openLoginModal(){
