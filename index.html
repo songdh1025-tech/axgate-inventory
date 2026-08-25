@@ -7,12 +7,7 @@
 <meta property="og:title" content="재고관리시스템">
 <meta property="og:description" content="AXGATE 재고관리 시스템">
 <meta property="og:type" content="website">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ea5b26">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%23ea5b26%22/%3E%3Ctext x=%2232%22 y=%2242%22 text-anchor=%22middle%22 font-size=%2230%22 fill=%22white%22 font-family=%22Arial%22%3EA%3C/text%3E%3C/svg%3E">
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.3.0/quagga.min.js"></script>
 <style>
   :root{
     --brand:#ea5b26;
@@ -360,16 +355,6 @@
   .scanner-result{background:var(--st-green-bg); border:2px solid var(--st-green-text); color:var(--st-green-text); padding:12px; border-radius:8px; margin-bottom:16px; font-weight:600;}
   .scanner-result.error{background:var(--st-red-bg); border-color:var(--st-red-text); color:var(--st-red-text);}
   .scanner-info{font-size:12px; color:var(--text-mute); margin-bottom:12px;}
-  .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
-  .photo-thumb{width:100%;aspect-ratio:1/1;object-fit:cover;border:1px solid var(--border);border-radius:8px;background:var(--bg);}
-  .photo-placeholder{display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;border:1px dashed var(--border);border-radius:8px;color:var(--text-faint);font-size:11px;background:var(--bg);}
-  .qr-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
-  #qrPrintCanvas{display:inline-block;background:#fff;padding:10px;}
-  .scan-mode{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
-  .scan-mode select{flex:1;}
-  .install-pwa{position:fixed;right:18px;bottom:18px;z-index:350;display:none;}
-  .install-pwa.show{display:inline-flex;}
-  .sync-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;background:var(--bg);font-size:11px;color:var(--text-mute);}
 </style>
 </head>
 <body>
@@ -404,7 +389,6 @@
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
     <div class="subtitle">로그인해주세요</div>
-    <div style="background:#fff8f1;border:1px solid #f6dcc4;color:#8a5a24;border-radius:8px;padding:9px 10px;font-size:11px;margin-bottom:14px;">기본 관리자: <b>jcube</b></div>
     <div class="login-form">
       <div class="input-group">
         <label for="loginUsername">사용자명</label>
@@ -448,7 +432,6 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <div class="sidebar" id="sidebarEl">
-  <button class="side-cta" onclick="openBarcodeScanner()" style="margin-bottom:8px;">📱 바코드 / QR 스캔</button>
   <button class="side-cta" onclick="openRegisterModal()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
     재고 등록하기
@@ -699,10 +682,9 @@
       <button class="modal-close" onclick="closeBarcodeScanner()">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="scanner-info">📱 장비의 시리얼번호 바코드 또는 QR을 카메라에 비춰주세요.</div>
-       <div class="scan-mode"><label style="font-size:12px;font-weight:700;color:var(--text-mute);">인식 방식</label><select id="scanMode"><option value="barcode">바코드 / QR 자동</option></select></div>
+      <div class="scanner-info">📱 장비의 시리얼번호 바코드를 카메라에 비춰주세요</div>
       <div id="barcode-scanner-container">
-        <div id="barcode-reader" style="width:100%;min-height:260px;"></div>
+        <video id="barcode-scanner-video"></video>
       </div>
       <div class="scanner-controls">
         <button class="btn primary" id="startScanBtn" onclick="startBarcodeScanner()" style="flex:1;">스캔 시작</button>
@@ -1196,7 +1178,7 @@ function renderInventory(v){
       </div>
       <div class="search-box">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
-        <input id="filQ" placeholder="모델명 / 시리얼번호 / 고객사 검색" value="${esc(filters.q)}" oninput="onFilterChange()">
+        <input id="filQ" placeholder="모델명 / 시리얼번호 / 고객사 검색" value="${esc(filters.q)}" onchange="onFilterChange()" oncompositionend="onFilterChange()">
       </div>
       <button class="btn ghost sm" onclick="resetFilters()">검색 초기화</button>
     </div>
@@ -1243,11 +1225,54 @@ function onFilterChange(){
   filters.status = document.getElementById("filStatus").value;
   filters.kind = document.getElementById("filKind").value;
   filters.q = document.getElementById("filQ").value;
-  render();
-  // restore focus to search box for smooth typing
-  setTimeout(()=>{ const el=document.getElementById("filQ"); if(el){ el.focus(); el.selectionStart = el.selectionEnd = el.value.length; } },0);
+
+  // 결과 목록만 업데이트 (입력 필드 유지)
+  renderInventoryList();
 }
-function resetFilters(){ filters = {status:"전체", kind:"전체", q:""}; render(); }
+
+function renderInventoryList(){
+  const list = filterInventory();
+  const mainContent = document.getElementById('main-content');
+  if(mainContent){
+    const htmlStr = `
+      <div class="crumb"><b>${statusBadge(filters.status)} 재고</b></div>
+      <div class="page-title">${statusBadge(filters.status)} 재고</div>
+
+      <div class="search-section">
+        <input id="filQ" placeholder="모델명 / 시리얼번호 / 고객사 검색" value="${esc(filters.q)}" onchange="onFilterChange()" oncompositionend="onFilterChange()">
+        <select id="filStatus" onchange="onFilterChange()" value="${filters.status}">
+          <option>전체</option><option>입고대기</option><option>보관중</option><option>출고완료</option><option>RMA점검</option><option>폐기</option>
+        </select>
+        <select id="filKind" onchange="onFilterChange()" value="${filters.kind}">
+          <option>전체</option><option>신품</option><option>중고</option><option>데모</option><option>RMA 교체품</option>
+        </select>
+        <button class="btn ghost sm" onclick="resetFilters()">검색 초기화</button>
+        <span class="result-count">검색 결과 ${list.length}건</span>
+      </div>
+
+      <div class="items-grid">
+        ${list.map((item, idx) => `
+          <div class="item-card" onclick="selectItem(${idx})" data-serial="${esc(item.serial)}">
+            <div style="font-weight:700; font-size:13px; margin-bottom:6px; color:var(--brand);">${esc(item.model)}</div>
+            <div style="font-size:12px; color:var(--text-mute);">SN: ${esc(item.serial)}</div>
+            <div style="font-size:12px; margin-top:8px;">${statusBadge(item.status)}</div>
+            ${item.customer ? '<div style="font-size:11px; color:var(--text-mute); margin-top:6px;">고객: ' + esc(item.customer) + '</div>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    mainContent.innerHTML = htmlStr;
+
+    // 입력 필드 유지
+    const filQ = document.getElementById('filQ');
+    if(filQ) filQ.focus();
+  }
+}
+
+function resetFilters(){
+  filters = {status:"전체", kind:"전체", q:""};
+  renderInventoryList();
+}
 
 /* ---------- history ---------- */
 function renderHistory(){
@@ -1279,56 +1304,62 @@ function renderHistory(){
 
 /* ---------- data backup ---------- */
 function renderData(){
-  const ghAuthStatus = gitHubState.isAuthed ? `<span class="sync-pill">● Worker 연결됨</span>` : '<span class="sync-pill">○ Worker 미연결</span>';
+  const ghAuthStatus = gitHubState.isAuthed ? `<span style="color:var(--st-green-text); font-weight:600;">✓ 연결됨</span>` : '<span style="color:var(--text-mute);">연결 대기 중</span>';
   return `
     <div class="crumb"><b>데이터 백업/복원</b></div>
     <div class="page-title">데이터 백업 / 복원</div>
     <div class="note">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
-      <div><b>GitHub Pages 운영 버전:</b> 브라우저에는 GitHub Token을 저장하지 않습니다. Cloudflare Worker가 GitHub API를 대신 호출합니다. 사용자 비밀번호는 공개 JSON에 저장하지 않으며 현재 브라우저별 로컬 인증으로 관리합니다.</div>
+      <div>이 프로그램은 브라우저 저장소를 사용하지 않아 새로고침 시 입력한 데이터가 초기화됩니다. 작업 후 <b>GitHub에 저장</b>하거나 <b>JSON/CSV로 내보내기</b>를 사용하세요.</div>
     </div>
 
     <div class="panel">
-      <div class="panel-head"><h3>☁️ GitHub 저장 연동</h3></div>
+      <div class="panel-head"><h3>🐙 GitHub 자동 백업</h3></div>
       <div class="panel-body">
-        <p style="color:var(--text-mute); margin-top:0; margin-bottom:12px;">${ghAuthStatus} 저장소 데이터: <b>${esc(gitHubState.owner||'미설정')}/${esc(gitHubState.repo||'미설정')}</b></p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn primary" onclick="initGitHub()">⚙️ Worker 설정</button>
-          <button class="btn" onclick="pushToGitHub()">☁️ 지금 저장</button>
-          <button class="btn" onclick="pullFromGitHub()">↻ 서버에서 불러오기</button>
-          <button class="btn danger sm" onclick="disconnectGitHub()">연결 해제</button>
+        <p style="color:var(--text-mute); margin-top:0; margin-bottom:12px;">데이터를 GitHub에 저장하고 버전 관리하세요. 모든 변경사항이 자동으로 기록됩니다! ${ghAuthStatus}</p>
+        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+          ${!gitHubState.isAuthed ? `<button class="btn primary" onclick="initGitHub()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            GitHub 연결</button>` : `
+            <button class="btn primary" onclick="pushToGitHub()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/></svg>
+              지금 저장</button>
+            <button class="btn" onclick="pullFromGitHub()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+              불러오기</button>
+            <button class="btn danger sm" onclick="disconnectGitHub()">연결 해제</button>
+          `}
         </div>
-        <div id="githubStatus" style="font-size:12px;color:var(--text-mute);padding:8px;margin-top:12px;background:var(--bg);border-radius:6px;">${esc(gitHubState.status||'Worker 주소를 설정하세요.')}</div>
+        <div id="githubStatus" style="font-size:12px; color:var(--text-mute); padding:8px; background:var(--bg); border-radius:6px;"></div>
+        ${gitHubState.isAuthed ? `
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:12px; color:var(--text-mute);">
+            <strong>📌 GitHub 정보:</strong><br/>
+            • 저장소: <code>${gitHubState.owner}/${gitHubState.repo}</code><br/>
+            • 데이터: data/ 폴더에 저장<br/>
+            • 접속: https://github.com/${gitHubState.owner}/${gitHubState.repo}<br/>
+            • 웹: https://${gitHubState.owner}.github.io/${gitHubState.repo}
+          </div>
+        ` : ''}
       </div>
     </div>
 
     <div class="two-col">
       <div class="panel">
-        <div class="panel-head"><h3>📊 Excel / JSON 내보내기</h3></div>
+        <div class="panel-head"><h3>📥 파일로 내보내기</h3></div>
         <div class="panel-body">
-          <p style="color:var(--text-mute);margin-top:0;">현재 재고 ${items.length}건, 이력 ${logs.length}건, 계약 ${maintenanceContracts.length}건</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn primary" onclick="exportExcel()">📗 Excel 내보내기</button>
-            <button class="btn" onclick="exportJSON()">JSON 내보내기</button>
-            <button class="btn" onclick="exportCSV(items)">CSV 내보내기</button>
-          </div>
+          <p style="color:var(--text-mute); margin-top:0;">현재 재고 ${items.length}건, 이력 ${logs.length}건, 계약 ${maintenanceContracts.length}건</p>
+          <button class="btn primary" onclick="exportJSON()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+            JSON 내보내기</button>
+          <button class="btn" style="margin-left:8px;" onclick="exportCSV(items)">CSV 내보내기</button>
         </div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h3>📥 일괄 등록 / 복원</h3></div>
+        <div class="panel-head"><h3>📤 파일에서 불러오기</h3></div>
         <div class="panel-body">
-          <p style="color:var(--text-mute);margin-top:0;">Excel 또는 JSON 백업을 불러옵니다.</p>
-          <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" onchange="importExcel(this.files[0])" style="display:block;padding:8px 0;margin-bottom:8px;">
-          <input type="file" id="importFile" accept="application/json" onchange="importJSON(this.files[0])" style="display:block;padding:8px 0;">
+          <p style="color:var(--text-mute); margin-top:0;">이전에 내보낸 JSON 파일을 선택하면 현재 데이터를 덮어씁니다.</p>
+          <input type="file" id="importFile" accept="application/json" onchange="importJSON(this.files[0])" style="display:block; padding:8px 0;">
         </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head"><h3>📱 모바일 설치</h3></div>
-      <div class="panel-body">
-        <div style="color:var(--text-mute);font-size:12.5px;line-height:1.7;">스마트폰 브라우저의 "홈 화면에 추가"로 앱처럼 사용할 수 있습니다. 카메라 스캔은 HTTPS 환경에서만 정상 동작합니다.</div>
-        <button class="btn" onclick="installPWA()" style="margin-top:10px;">📲 홈 화면 설치</button>
       </div>
     </div>
   `;
@@ -1390,7 +1421,7 @@ function renderMaintenance(){
       </div>
       <div class="search-box">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
-        <input id="maintFilQ" placeholder="사이트 / 담당자 / 매출처 / 장비 검색" value="${esc(maintFilters.q)}" oninput="onMaintFilterChange()">
+        <input id="maintFilQ" placeholder="사이트 / 담당자 / 매출처 / 장비 검색" value="${esc(maintFilters.q)}" onchange="onMaintFilterChange()" oncompositionend="onMaintFilterChange()">
       </div>
       <button class="btn ghost sm" onclick="resetMaintFilters()">검색 초기화</button>
     </div>
@@ -1432,13 +1463,62 @@ function renderMaintenance(){
 function onMaintFilterChange(){
   maintFilters.status = document.getElementById("maintFilStatus").value;
   maintFilters.q = document.getElementById("maintFilQ").value;
-  render();
-  setTimeout(()=>{ const el=document.getElementById("maintFilQ"); if(el){ el.focus(); el.selectionStart = el.selectionEnd = el.value.length; } },0);
+
+  // 결과 목록만 업데이트 (입력 필드 유지)
+  renderMaintenanceList();
+}
+
+function renderMaintenanceList(){
+  const list = filterMaintenance();
+  const mainContent = document.getElementById('main-content');
+  if(mainContent){
+    const htmlStr = `
+      <div class="crumb"><b>유지보수 현황</b></div>
+      <div class="page-title">유지보수 계약 현황</div>
+
+      <div class="search-section">
+        <select id="maintFilStatus" onchange="onMaintFilterChange()">
+          <option>전체</option><option>활성</option><option>만료</option><option>중단</option><option>대기</option>
+        </select>
+        <div class="search-box">
+          <input id="maintFilQ" placeholder="사이트 / 담당자 / 매출처 / 장비 검색" value="${esc(maintFilters.q)}" onchange="onMaintFilterChange()" oncompositionend="onMaintFilterChange()">
+        </div>
+        <button class="btn ghost sm" onclick="resetMaintFilters()">검색 초기화</button>
+        <span class="result-count">검색 결과 ${list.length}건</span>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <tr>
+            <th>고객사/사이트</th>
+            <th>담당자</th>
+            <th>상태</th>
+            <th>시작일</th>
+            <th>종료일</th>
+          </tr>
+          ${list.map((c, idx) => \`
+            <tr onclick="selectMaintenance(\${idx})" style="cursor:pointer;">
+              <td><strong>\${esc(c.customer)}</strong></td>
+              <td>\${esc(c.manager)}</td>
+              <td>\${statusBadge(c.status)}</td>
+              <td>\${c.startDate || '-'}</td>
+              <td>\${c.endDate || '-'}</td>
+            </tr>
+          \`).join('')}
+        </table>
+      </div>
+    `;
+    mainContent.innerHTML = htmlStr;
+
+    // 입력 필드 유지
+    const maintFilQ = document.getElementById('maintFilQ');
+    if(maintFilQ) maintFilQ.focus();
+  }
 }
 
 function resetMaintFilters(){
   maintFilters = {status:"전체", q:""};
-  render();
+  renderMaintenanceList();
 }
 
 function exportMaintCSV(){
@@ -1472,28 +1552,45 @@ function openRegisterModal(prefillId){
   set("f_loc", it? it.loc:"");
   set("f_customer", it? it.customer:"");
   set("f_memo", it? it.memo:"");
-  const fp=document.getElementById("f_photos"); if(fp) fp.value="";
-  const pp=document.getElementById("photoPreview"); if(pp) pp.innerHTML=(it&&it.photos&&it.photos.length)?it.photos.map(p=>`<img class="photo-thumb" src="${p}">`).join(""):"";
 
   openModal("regOverlay");
 }
 
-async function saveItem(){
-  const model=document.getElementById('f_model').value.trim();
-  const serial=normalizeSerial(document.getElementById('f_serial').value);
-  if(!model||!serial){toast('모델명과 시리얼번호는 필수입니다.');return;}
-  const duplicate=items.find(i=>normalizeSerial(i.serial)===serial && i.id!==editingId);
-  if(duplicate){toast('이미 등록된 시리얼번호입니다.');return;}
-  const data={model,serial,family:document.getElementById('f_family').value,qty:Number(document.getElementById('f_qty').value||1),kind:document.getElementById('f_kind').value,status:document.getElementById('f_status').value,license:document.getElementById('f_license').value,os:document.getElementById('f_os').value,mfg:document.getElementById('f_mfg').value,in:document.getElementById('f_in').value,out:document.getElementById('f_out').value,loc:document.getElementById('f_loc').value,customer:document.getElementById('f_customer').value,memo:document.getElementById('f_memo').value};
-  const photoFiles=[...(document.getElementById('f_photos')?.files||[])].slice(0,3);
-  if(photoFiles.length) data.photos=await Promise.all(photoFiles.map(compressImage));
-  if(editingId){const idx=items.findIndex(i=>i.id===editingId); items[idx]={...items[idx],...data,updatedAt:new Date().toISOString()}; logs.push({itemId:editingId,when:nowStr(),who:loginSystem.currentUser||'사용자',text:'재고 정보가 수정되었습니다.'});toast('수정되었습니다.');}
-  else{const id=mkId();items.push({id,...data,createdAt:new Date().toISOString()});logs.push({itemId:id,when:nowStr(),who:loginSystem.currentUser||'사용자',text:`재고 등록 (${model} / ${serial})`});toast('등록되었습니다.');}
-  closeModal('regOverlay'); render(); autoSaveToGitHub();
-}
+function saveItem(){
+  const model = document.getElementById("f_model").value.trim();
+  const serial = document.getElementById("f_serial").value.trim();
+  if(!model || !serial){ toast("모델명과 시리얼번호는 필수입니다."); return; }
 
-function compressImage(file,maxWidth=1280,quality=.72){
-  return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality));};img.onerror=reject;img.src=r.result;};r.onerror=reject;r.readAsDataURL(file);});
+  const data = {
+    model, serial,
+    family: document.getElementById("f_family").value,
+    qty: Number(document.getElementById("f_qty").value || 1),
+    kind: document.getElementById("f_kind").value,
+    status: document.getElementById("f_status").value,
+    license: document.getElementById("f_license").value,
+    os: document.getElementById("f_os").value,
+    mfg: document.getElementById("f_mfg").value,
+    in: document.getElementById("f_in").value,
+    out: document.getElementById("f_out").value,
+    loc: document.getElementById("f_loc").value,
+    customer: document.getElementById("f_customer").value,
+    memo: document.getElementById("f_memo").value,
+  };
+
+  if(editingId){
+    const idx = items.findIndex(i=>i.id===editingId);
+    items[idx] = {...items[idx], ...data};
+    logs.push({itemId:editingId, when: nowStr(), who:"송대훈 이사", text:"재고 정보가 수정되었습니다."});
+    toast("수정되었습니다.");
+  } else {
+    const id = mkId();
+    items.push({id, ...data});
+    logs.push({itemId:id, when: nowStr(), who:"송대훈 이사", text:`재고 등록 (${model} / ${serial})`});
+    toast("등록되었습니다.");
+  }
+  closeModal("regOverlay");
+  render();
+  autoSaveToGitHub();
 }
 
 function nowStr(){
@@ -1638,9 +1735,7 @@ function openDetail(id){
       <div class="kv"><span class="k">최종위치</span><span class="v">${esc(it.loc)||"-"}</span></div>
       <div class="kv"><span class="k">고객사/담당</span><span class="v">${esc(it.customer)||"-"}</span></div>
     </div>
-    ${it.photos&&it.photos.length?`<div style="margin-top:16px;"><div style="font-size:13px;font-weight:700;margin-bottom:8px;">장비 사진</div><div class="photo-grid">${it.photos.map(p=>`<img class="photo-thumb" src="${p}" onclick="window.open(this.src,'_blank')">`).join("")}</div></div>`:""}
     ${it.memo? `<div style="margin-top:14px; background:var(--bg); border-radius:8px; padding:10px 12px; font-size:12.8px; color:var(--text-mute);">${esc(it.memo)}</div>`:""}
-    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;"><button class="btn primary" onclick="showItemQR('${it.id}')">▦ QR 라벨</button><button class="btn" onclick="printItemQR('${it.id}')">🖨 QR 인쇄</button></div>
   `;
   switchTab("info");
   renderLogThread();
@@ -1681,19 +1776,6 @@ function deleteCurrentDetail(){
   autoSaveToGitHub();
 }
 
-function showItemQR(id){
-  const it=items.find(x=>x.id===id); if(!it) return;
-  let old=document.getElementById('qrOverlay');
-  if(old) old.remove();
-  const ov=document.createElement('div'); ov.id='qrOverlay'; ov.className='overlay show'; ov.innerHTML=`<div class="modal" style="max-width:360px;"><div class="modal-head"><h3>QR 자산 라벨</h3><button class="modal-close" onclick="this.closest('.overlay').remove()">&times;</button></div><div class="modal-body"><div class="qr-card"><div style="font-weight:800;font-size:16px;">${esc(it.model)}</div><div style="font-family:ui-monospace;margin-top:4px;">${esc(it.serial)}</div><div id="qrPrintCanvas" style="margin-top:12px;"></div></div></div><div class="modal-foot"><button class="btn primary" onclick="printItemQR('${it.id}')">인쇄</button><button class="btn" onclick="this.closest('.overlay').remove()">닫기</button></div></div>`;
-  document.body.appendChild(ov); new QRCode(document.getElementById('qrPrintCanvas'),{text:it.serial,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
-}
-function printItemQR(id){
-  const it=items.find(x=>x.id===id); if(!it) return;
-  const w=window.open('','_blank','width=420,height=520');
-  w.document.write(`<html><head><title>QR ${esc(it.serial)}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body style="font-family:Arial;text-align:center;padding:30px"><h2>${esc(it.model)}</h2><div>${esc(it.serial)}</div><div id="q" style="margin:20px auto;width:180px"></div><div style="font-size:12px">AXGATE INVENTORY</div><script>new QRCode(document.getElementById('q'),{text:${JSON.stringify(it.serial)},width:180,height:180});window.print();<\\/script></body></html>`); w.document.close();
-}
-
 /* ================= modal generic ================= */
 function openModal(id){ document.getElementById(id).classList.add("show"); }
 function closeModal(id){ document.getElementById(id).classList.remove("show"); }
@@ -1717,166 +1799,279 @@ function exportCSV(list){
   download(`axgate_재고_${dstr(0)}.csv`, "﻿"+csv, "text/csv;charset=utf-8;");
   toast("CSV 파일을 내보냈습니다.");
 }
-/* ================= GitHub Worker integration ================= */
-let gitHubState = { isAuthed:false, workerUrl:'', owner:'', repo:'', status:'' };
-const DEFAULT_WORKER_URL = '';
-
-function getWorkerConfig(){
-  return {
-    workerUrl: localStorage.getItem('axgateWorkerUrl') || DEFAULT_WORKER_URL,
-    owner: localStorage.getItem('githubOwner') || '',
-    repo: localStorage.getItem('githubRepo') || ''
-  };
-}
+/* ================= github integration ================= */
+let gitHubState = { isAuthed: false, token: null, owner: null, repo: null };
+const GITHUB_CONFIG = {
+  apiUrl: "https://api.github.com"
+};
 
 function initGitHub(){
-  const current = getWorkerConfig();
-  const workerUrl = prompt('Cloudflare Worker 주소를 입력하세요.\n예: https://axgate-inventory-api.xxx.workers.dev', current.workerUrl || '');
-  if(!workerUrl) return;
-  const owner = prompt('GitHub 사용자/조직명', current.owner || '');
+  // GitHub 연결 모달 표시
+  const token = prompt("GitHub Personal Access Token을 입력하세요:\n\n(github.com/settings/tokens에서 생성)\n\n필요한 권한: repo");
+  if(!token) return;
+
+  const owner = prompt("GitHub 사용자명을 입력하세요:\n\n예: songdh1025");
   if(!owner) return;
-  const repo = prompt('GitHub 저장소명', current.repo || '');
+
+  const repo = prompt("저장소명을 입력하세요:\n\n예: axgate-inventory");
   if(!repo) return;
-  gitHubState.workerUrl = workerUrl.trim().replace(/\/$/,'');
+
+  // 입력 검증
+  if(!token.trim() || !owner.trim() || !repo.trim()){
+    alert("모든 필드를 입력해주세요.");
+    return;
+  }
+
+  gitHubState.token = token.trim();
   gitHubState.owner = owner.trim();
   gitHubState.repo = repo.trim();
   gitHubState.isAuthed = true;
-  gitHubState.status = 'Worker 설정 완료';
-  localStorage.setItem('axgateWorkerUrl', gitHubState.workerUrl);
+
+  localStorage.setItem('githubToken', gitHubState.token);
   localStorage.setItem('githubOwner', gitHubState.owner);
   localStorage.setItem('githubRepo', gitHubState.repo);
-  toast('Worker 연결 설정이 저장되었습니다.');
-  updateGitHubStatus('Worker: '+gitHubState.workerUrl);
+
+  console.log("✅ GitHub 연결 성공:", {owner: gitHubState.owner, repo: gitHubState.repo});
+  toast("GitHub 연결 성공! 이제 모든 변경사항이 자동으로 GitHub에 저장됩니다.");
   render();
-  loadFromGitHubOnStart();
 }
 
 function disconnectGitHub(){
-  if(!confirm('Worker 연결 설정을 삭제하시겠습니까?')) return;
-  gitHubState={isAuthed:false,workerUrl:'',owner:'',repo:'',status:''};
-  localStorage.removeItem('axgateWorkerUrl');
+  if(!confirm("GitHub 연결을 해제하시겠습니까?")) return;
+  gitHubState.isAuthed = false;
+  gitHubState.token = null;
+  gitHubState.owner = null;
+  gitHubState.repo = null;
+  localStorage.removeItem('githubToken');
   localStorage.removeItem('githubOwner');
   localStorage.removeItem('githubRepo');
-  toast('연결 설정이 삭제되었습니다.');
+  toast("GitHub 연결이 해제되었습니다.");
   render();
 }
 
-async function workerRequest(payload){
-  if(!gitHubState.workerUrl) throw new Error('Worker 주소가 설정되지 않았습니다.');
-  const res=await fetch(gitHubState.workerUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const data=await res.json().catch(()=>({}));
-  if(!res.ok || data.success===false) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
-}
-
-async function saveWorkerFile(fileName,data){
-  return workerRequest({action:'save',file:fileName,data});
-}
-
-async function loadWorkerFile(fileName){
-  if(!gitHubState.workerUrl) throw new Error('Worker 주소가 설정되지 않았습니다.');
-  const res=await fetch(gitHubState.workerUrl+'?file='+encodeURIComponent(fileName));
-  const data=await res.json();
-  if(!res.ok || data.success===false) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
-}
-
 async function pushToGitHub(){
-  if(!gitHubState.workerUrl){ initGitHub(); return; }
-  try{
-    await Promise.all([
-      saveWorkerFile('inven',{items,logs}),
-      saveWorkerFile('maint',{maintenanceContracts})
-    ]);
-    const stamp=new Date().toLocaleString('ko-KR');
-    updateGitHubStatus('마지막 저장: '+stamp);
-    toast('GitHub에 저장되었습니다.');
-  }catch(err){
-    console.error(err); toast('저장 실패: '+err.message);
-  }
-}
-
-let saveDebounceTimer=null;
-function autoSaveToGitHub(){
-  clearTimeout(saveDebounceTimer);
-  localStorage.setItem('axgateSnapshot',JSON.stringify({items,logs,maintenanceContracts,savedAt:new Date().toISOString()}));
-  if(!gitHubState.workerUrl) return;
-  saveDebounceTimer=setTimeout(()=>pushToGitHub(),800);
-}
-
-async function pullFromGitHub(){ await loadFromGitHubOnStart(true); }
-
-async function loadFromGitHubOnStart(showToast=false){
-  const cfg=getWorkerConfig();
-  if(!cfg.workerUrl){
-    const snapshot=localStorage.getItem('axgateSnapshot');
-    if(snapshot){ try{ const d=JSON.parse(snapshot); items=d.items||[]; logs=d.logs||[]; maintenanceContracts=d.maintenanceContracts||[]; seq=items.length+1; maintSeq=maintenanceContracts.length+1; }catch{} }
-    render();
+  if(!gitHubState.isAuthed){
+    toast("먼저 GitHub에 연결하세요.");
     return;
   }
-  gitHubState={...gitHubState,...cfg,isAuthed:true};
+
   try{
-    const [inv,maint]=await Promise.all([loadWorkerFile('inven'),loadWorkerFile('maint')]);
-    items=inv.items||[]; logs=inv.logs||[]; maintenanceContracts=maint.maintenanceContracts||[];
-    seq=Math.max(1,...items.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1;
-    maintSeq=Math.max(1,...maintenanceContracts.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1;
-    localStorage.setItem('axgateSnapshot',JSON.stringify({items,logs,maintenanceContracts,savedAt:new Date().toISOString()}));
-    updateGitHubStatus('마지막 불러오기: '+new Date().toLocaleString('ko-KR'));
-    if(showToast) toast('GitHub에서 데이터를 불러왔습니다.');
+    const backupData = JSON.stringify({items, logs, maintenanceContracts}, null, 2);
+    const fileName = `data_${dstr(0)}.json`;
+
+    // GitHub에 파일 업로드
+    await uploadToGitHub(fileName, backupData);
+
+    toast(`GitHub에 업로드되었습니다! (${fileName})`);
+    updateGitHubStatus(`마지막 동기화: ${new Date().toLocaleString()}\n저장소: ${gitHubState.owner}/${gitHubState.repo}`);
+  } catch(err){
+    console.error("GitHub 업로드 실패:", err);
+    toast("업로드 실패: " + (err.message || "알 수 없는 오류"));
+  }
+}
+
+async function uploadToGitHub(fileName, content){
+  const path = `data/${fileName}`;
+  const message = `[AXGATE] 데이터 백업 - ${new Date().toLocaleString('ko-KR')}`;
+
+  // Base64 인코딩 (GitHub API 요구사항)
+  const encodedContent = btoa(unescape(encodeURIComponent(content)));
+
+  const url = `${GITHUB_CONFIG.apiUrl}/repos/${gitHubState.owner}/${gitHubState.repo}/contents/${path}`;
+
+  console.log(`📤 ${fileName} 업로드 중...`, {url, contentLength: content.length});
+
+  // 기존 파일 확인
+  let sha = null;
+  try{
+    const getRes = await fetch(url, {
+      headers: {'Authorization': `token ${gitHubState.token}`}
+    });
+    if(getRes.ok){
+      const data = await getRes.json();
+      sha = data.sha;
+      console.log(`  기존 파일 확인됨, sha: ${String(sha).substring(0, 8)}...`);
+    }
+  } catch(e){
+    console.log(`  새 파일로 생성 예정`);
+  }
+
+  // 파일 생성/업데이트
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${gitHubState.token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message,
+      content: encodedContent,
+      sha: sha
+    })
+  });
+
+  if(!res.ok){
+    const err = await res.json();
+    console.error(`  ❌ ${fileName} 업로드 실패:`, err);
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  console.log(`  ✅ ${fileName} 업로드 성공`);
+}
+
+// 자동 저장 (조용히 백그라운드에서) - 파일 분리 저장
+async function autoSaveToGitHub(){
+  if(!gitHubState.isAuthed){
+    console.log("GitHub 연결되지 않음. 자동 저장 스킵.");
+    return;
+  }
+
+  try{
+    // 각 데이터를 분리해서 저장
+    const userData = JSON.stringify(loginSystem.users, null, 2);
+    const inventoryData = JSON.stringify({items, logs}, null, 2);
+    const maintenanceData = JSON.stringify({maintenanceContracts}, null, 2);
+
+    console.log("GitHub 저장 시작:", {owner: gitHubState.owner, repo: gitHubState.repo});
+
+    // 동시에 3개 파일 업로드
+    await Promise.all([
+      uploadToGitHub('user.json', userData),
+      uploadToGitHub('inven.json', inventoryData),
+      uploadToGitHub('maint.json', maintenanceData)
+    ]);
+
+    console.log("✅ GitHub에 자동 저장됨 (user.json, inven.json, maint.json)");
+  } catch(err){
+    console.error("❌ 자동 저장 실패:", err.message || err);
+  }
+}
+
+async function pullFromGitHub(){
+  if(!gitHubState.isAuthed){
+    toast("먼저 GitHub에 연결하세요.");
+    return;
+  }
+
+  try{
+    // 최신 data 파일 찾기
+    const contentsUrl = `${GITHUB_CONFIG.apiUrl}/repos/${gitHubState.owner}/${gitHubState.repo}/contents/data`;
+    const listRes = await fetch(contentsUrl, {
+      headers: {'Authorization': `token ${gitHubState.token}`}
+    });
+
+    if(!listRes.ok) throw new Error("data 폴더를 찾을 수 없습니다.");
+
+    const files = await listRes.json();
+    if(!Array.isArray(files) || files.length === 0) throw new Error("저장된 데이터가 없습니다.");
+
+    // 가장 최신 파일 (이름순 정렬)
+    const latestFile = files.sort((a, b) => b.name.localeCompare(a.name))[0];
+
+    // 파일 다운로드
+    const fileRes = await fetch(latestFile.url, {
+      headers: {'Authorization': `token ${gitHubState.token}`}
+    });
+
+    if(!fileRes.ok) throw new Error("파일을 다운로드할 수 없습니다.");
+
+    const fileData = await fileRes.json();
+    const content = atob(fileData.content);
+    const data = JSON.parse(content);
+
+    if(!Array.isArray(data.items)) throw new Error("invalid format");
+
+    items = data.items;
+    logs = data.logs || [];
+    maintenanceContracts = data.maintenanceContracts || [];
+    seq = items.length + 1;
+    maintSeq = maintenanceContracts.length + 1;
+
+    toast("GitHub에서 불러왔습니다.");
+    updateGitHubStatus(`마지막 동기화: ${new Date().toLocaleString()}\n파일: ${latestFile.name}`);
     render();
-  }catch(err){
-    console.error('Worker load error',err);
-    if(showToast) toast('불러오기 실패: '+err.message);
-    const snapshot=localStorage.getItem('axgateSnapshot');
-    if(snapshot){ try{const d=JSON.parse(snapshot);items=d.items||[];logs=d.logs||[];maintenanceContracts=d.maintenanceContracts||[];}catch{} }
-    render();
+  } catch(err){
+    console.error("GitHub 다운로드 실패:", err);
+    toast("다운로드 실패: " + (err.message || "알 수 없는 오류"));
+  }
+}
+
+// 페이지 로드 시 GitHub에서 자동 로드 - 파일 분리 로드
+async function loadFromGitHubOnStart(){
+  if(!gitHubState.isAuthed) return;
+
+  try{
+    const baseUrl = `${GITHUB_CONFIG.apiUrl}/repos/${gitHubState.owner}/${gitHubState.repo}/contents/data`;
+
+    // 3개 파일 동시 로드
+    const [userRes, inventoryRes, maintenanceRes] = await Promise.all([
+      fetch(`${baseUrl}/user.json`, {headers: {'Authorization': `token ${gitHubState.token}`}}),
+      fetch(`${baseUrl}/inven.json`, {headers: {'Authorization': `token ${gitHubState.token}`}}),
+      fetch(`${baseUrl}/maint.json`, {headers: {'Authorization': `token ${gitHubState.token}`}})
+    ]);
+
+    // 사용자 정보 로드
+    if(userRes.ok){
+      const userData = await userRes.json();
+      const userContent = atob(userData.content);
+      loginSystem.users = JSON.parse(userContent);
+      console.log("user.json 로드됨");
+    }
+
+    // 재고 정보 로드
+    if(inventoryRes.ok){
+      const invData = await inventoryRes.json();
+      const invContent = atob(invData.content);
+      const data = JSON.parse(invContent);
+      items = data.items || [];
+      logs = data.logs || [];
+      seq = items.length + 1;
+      console.log("inven.json 로드됨");
+    }
+
+    // 유지보수 계약 로드
+    if(maintenanceRes.ok){
+      const maintData = await maintenanceRes.json();
+      const maintContent = atob(maintData.content);
+      const data = JSON.parse(maintContent);
+      maintenanceContracts = data.maintenanceContracts || [];
+      maintSeq = maintenanceContracts.length + 1;
+      console.log("maint.json 로드됨");
+    }
+
+    console.log("GitHub에서 모든 데이터 로드 완료");
+  } catch(err){
+    console.error("GitHub 자동 로드 실패:", err);
+    // 첫 실행이거나 파일이 없을 수 있으므로 오류는 무시
   }
 }
 
 function updateGitHubStatus(msg){
-  gitHubState.status=msg;
-  const el=document.getElementById('githubStatus');
-  if(el) el.innerText=msg;
+  const el = document.getElementById('githubStatus');
+  if(el) el.innerText = msg;
 }
 
 function exportJSON(){
-  download(`axgate_재고백업_${dstr(0)}.json`, JSON.stringify({items,logs,maintenanceContracts}, null, 2), 'application/json');
-  toast('JSON 백업을 내보냈습니다.');
-}
-
-function exportExcel(){
-  if(typeof XLSX==='undefined'){toast('Excel 라이브러리를 불러오지 못했습니다.');return;}
-  const rows=items.map(it=>({상태:it.status,모델명:it.model,시리얼번호:it.serial,제품군:it.family,재고구분:it.kind,라이선스:it.license,OS정보:it.os,제조일:it.mfg,입고일:it.in,출고일:it.out,최종위치:it.loc,수량:it.qty,고객사:it.customer,비고:it.memo}));
-  const wb=XLSX.utils.book_new(); const ws=XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb,ws,'재고');
-  const maint=maintenanceContracts.map(m=>({계약상태:m.contract_status,사이트:m.site,담당자:m.manager,매출처:m.revenue,계약명:m.contract_name,시작일:m.start_date,종료일:m.end_date,장비:m.equipment_serials,비고:m.memo}));
-  const ws2=XLSX.utils.json_to_sheet(maint); XLSX.utils.book_append_sheet(wb,ws2,'유지보수');
-  XLSX.writeFile(wb,`axgate_재고_${dstr(0)}.xlsx`); toast('Excel 파일을 내보냈습니다.');
-}
-
-function importExcel(file){
-  if(!file) return;
-  if(typeof XLSX==='undefined'){toast('Excel 라이브러리를 불러오지 못했습니다.');return;}
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-      let count=0;
-      rows.forEach(r=>{
-        const serial=String(r['시리얼번호']||r['Serial']||r['serial']||'').trim(); if(!serial) return;
-        const existing=items.find(x=>x.serial===serial);
-        const data={model:String(r['모델명']||r['Model']||''),serial,family:String(r['제품군']||'기타'),qty:Number(r['수량']||1),kind:String(r['재고구분']||'신품'),status:String(r['상태']||'입고대기'),license:String(r['라이선스']||'해당없음'),os:String(r['OS정보']||''),mfg:String(r['제조일']||''),in:String(r['입고일']||''),out:String(r['출고일']||''),loc:String(r['최종위치']||''),customer:String(r['고객사']||''),memo:String(r['비고']||'')};
-        if(existing) Object.assign(existing,data); else items.push({id:mkId(),...data}); count++;
-      });
-      seq=Math.max(1,...items.map(x=>parseInt(String(x.id).replace(/\D/g,''),10)||0))+1; render(); autoSaveToGitHub(); toast(`${count}건을 Excel에서 반영했습니다.`);
-    }catch(err){console.error(err);toast('Excel 파일을 읽을 수 없습니다.');}
-  }; reader.readAsArrayBuffer(file);
+  download(`axgate_재고백업_${dstr(0)}.json`, JSON.stringify({items, logs, maintenanceContracts}, null, 2), "application/json");
+  toast("백업 파일을 내보냈습니다.");
 }
 
 function importJSON(file){
   if(!file) return;
-  const reader=new FileReader(); reader.onload=e=>{
-    try{ const data=JSON.parse(e.target.result); if(!Array.isArray(data.items)) throw new Error('invalid'); items=data.items; logs=data.logs||[]; maintenanceContracts=data.maintenanceContracts||[]; seq=Math.max(1,...items.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1; maintSeq=Math.max(1,...maintenanceContracts.map(x=>parseInt(String(x.id||'').replace(/\D/g,''),10)||0))+1; render(); autoSaveToGitHub(); toast('JSON 백업을 불러왔습니다.'); }catch(err){toast('JSON 백업 형식이 올바르지 않습니다.');}
-  }; reader.readAsText(file);
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!Array.isArray(data.items)) throw new Error("invalid");
+      items = data.items;
+      logs = data.logs || [];
+      maintenanceContracts = data.maintenanceContracts || [];
+      seq = items.length + 1;
+      maintSeq = maintenanceContracts.length + 1;
+      toast("백업을 불러왔습니다.");
+      render();
+    }catch(err){ toast("파일을 읽을 수 없습니다. JSON 백업 파일인지 확인해주세요."); }
+  };
+  reader.readAsText(file);
 }
 
 /* ================= global search ================= */
@@ -1911,16 +2106,14 @@ const loginSystem = {
   roleNames: ROLE_NAMES,
 
   initUsers() {
-    // 고정 관리자 계정: jcube / Jcube4681
-    // 사용자가 요청한 기본 관리자 계정이 항상 존재하도록 보장합니다.
     const saved = localStorage.getItem('axgateUsers');
-    try {
-      this.users = saved ? JSON.parse(saved) : {};
-    } catch (e) {
+    if(saved) {
+      this.users = JSON.parse(saved);
+    } else {
+      // 초기 설정: 기본 관리자 계정은 사용자가 설정
       this.users = {};
+      this.saveUsers();
     }
-    this.users['jcube'] = { password: 'Jcube4681', role: 99 };
-    this.saveUsers();
   },
 
   saveUsers() {
@@ -1928,7 +2121,6 @@ const loginSystem = {
   },
 
   addUser(username, password, role) {
-    if(username === 'jcube') return {success: false, message: 'jcube는 고정 관리자 계정입니다'};
     if(this.users[username]) return {success: false, message: '이미 존재하는 사용자명입니다'};
 
     // 관리자는 최대 2명
@@ -1943,7 +2135,6 @@ const loginSystem = {
   },
 
   updateUser(username, password, role) {
-    if(username === 'jcube') return {success: false, message: '고정 관리자 계정은 수정할 수 없습니다'};
     if(!this.users[username]) return {success: false, message: '사용자를 찾을 수 없습니다'};
 
     // 관리자 수 체크 (기존 관리자가 아닌데 관리자로 변경하는 경우)
@@ -1960,7 +2151,6 @@ const loginSystem = {
   },
 
   deleteUser(username) {
-    if(username === 'jcube') return false; // 고정 관리자 삭제 금지
     if(!this.users[username]) return false;
     delete this.users[username];
     this.saveUsers();
@@ -2206,7 +2396,6 @@ function saveUserEdit(){
 }
 
 function deleteUserConfirm(username){
-  if(username === 'jcube'){ toast('고정 관리자 계정은 삭제할 수 없습니다.'); return; }
   if(confirm(username + ' 사용자를 삭제하시겠습니까?')){
     loginSystem.deleteUser(username);
     toast(username + ' 사용자가 삭제되었습니다');
@@ -2214,110 +2403,209 @@ function deleteUserConfirm(username){
   }
 }
 
-/* ================= barcode / QR scanner ================= */
-let barcodeScanning=false;
-let html5QrCode=null;
-let lastScannedCode='';
-let lastScanAt=0;
+/* ================= barcode scanner ================= */
+let barcodeScanning = false;
 
 function openBarcodeScanner(){
   document.getElementById('barcodeScannerOverlay').classList.add('show');
-  document.getElementById('scannerResult').innerHTML='<div class="scanner-info">스캔 시작을 눌러 카메라 권한을 허용하세요.</div>';
+  document.getElementById('scannerResult').innerHTML = '';
 }
-function closeBarcodeScanner(){ stopBarcodeScanner(); document.getElementById('barcodeScannerOverlay').classList.remove('show'); }
 
-function normalizeSerial(code){ return String(code||'').trim().replace(/\s+/g,'').toUpperCase(); }
+function closeBarcodeScanner(){
+  stopBarcodeScanner();
+  document.getElementById('barcodeScannerOverlay').classList.remove('show');
+}
 
-async function startBarcodeScanner(){
+function startBarcodeScanner(){
   if(barcodeScanning) return;
-  if(typeof Html5Qrcode==='undefined'){ alert('스캐너 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요.'); return; }
-  barcodeScanning=true;
-  document.getElementById('startScanBtn').style.display='none';
-  document.getElementById('stopScanBtn').style.display='block';
-  document.getElementById('scannerResult').innerHTML='<div class="scanner-info">🔄 스캔 중... 카메라 권한을 허용하세요.</div>';
-  html5QrCode=new Html5Qrcode('barcode-reader');
-  const formats=[];
-  const F=window.Html5QrcodeSupportedFormats||{};
-  ['QR_CODE','CODE_128','CODE_39','CODE_93','EAN_13','EAN_8','UPC_A','UPC_E','ITF','CODABAR'].forEach(k=>{if(F[k]!=null)formats.push(F[k]);});
-  const config={fps:10,qrbox:{width:260,height:180},formatsToSupport:formats.length?formats:undefined};
-  try{
-    // html5-qrcode는 facingMode에 {ideal: ...} 형태를 받지 않습니다.
-    // 모바일 후면 카메라를 우선 사용하기 위해 정확히 문자열로 지정합니다.
-    await html5QrCode.start({facingMode:'environment'},config,handleScanSuccess,()=>{});
-  }catch(firstErr){
-    console.warn('후면 카메라 직접 시작 실패, 카메라 목록으로 재시도:', firstErr);
-    try{
-      const cameras=await Html5Qrcode.getCameras();
-      if(!cameras || !cameras.length) throw firstErr;
-      const rear=cameras.find(c=>/back|rear|environment|후면|뒤/i.test(c.label)) || cameras[cameras.length-1];
-      await html5QrCode.start(rear.id,config,handleScanSuccess,()=>{});
-    }catch(err){
-      console.error(err);
-      barcodeScanning=false;
-      try{ await html5QrCode.clear(); }catch(e){}
-      html5QrCode=null;
-      document.getElementById('startScanBtn').style.display='block';
-      document.getElementById('stopScanBtn').style.display='none';
-      document.getElementById('scannerResult').innerHTML=`<div class="scanner-result error">카메라를 시작할 수 없습니다.<br><small>${esc(err.message||String(err))}</small><br><small style="display:block;margin-top:6px;">GitHub Pages의 HTTPS 주소에서 카메라 권한을 허용했는지도 확인해주세요.</small></div>`;
+
+  // Quagga 라이브러리 확인
+  if(typeof Quagga === 'undefined'){
+    alert('바코드 스캐너 라이브러리를 로드하지 못했습니다. 페이지를 새로고침해주세요.');
+    return;
+  }
+
+  barcodeScanning = true;
+  document.getElementById('startScanBtn').style.display = 'none';
+  document.getElementById('stopScanBtn').style.display = 'block';
+  document.getElementById('scannerResult').innerHTML = '<div class="scanner-info">🔄 스캔 중... (카메라 권한 허용 필요)</div>';
+
+  Quagga.init({
+    inputStream: {
+      name: 'Live',
+      type: 'LiveStream',
+      target: document.querySelector('#barcode-scanner-video'),
+      constraints: {
+        width: {min: 640},
+        height: {min: 480},
+        facingMode: 'environment'
+      }
+    },
+    decoder: {
+      readers: ['code_128_reader', 'ean_reader', 'ean_8_reader', 'code_39_reader', 'code_39_vin_reader', 'codabar_reader', 'upc_reader', 'upc_e_reader', 'i2of5_reader'],
+      debug: {
+        showCanvas: false,
+        showPatches: false,
+        showFoundPatches: false,
+        showSkeleton: false,
+        showLabels: false,
+        showCandidates: false,
+        showBoundingBox: false,
+        showImageSections: false,
+        showRemainingPatchesCount: false
+      }
     }
-  }
+  }, function(err){
+    if(err){
+      console.error("❌ Quagga 초기화 오류:", err);
+      let errorMsg = '❌ 카메라 접근 오류';
+      if(err.message) errorMsg += ': ' + err.message;
+      document.getElementById('scannerResult').innerHTML = `<div class="scanner-result error">${errorMsg}</div>`;
+      barcodeScanning = false;
+      document.getElementById('startScanBtn').style.display = 'block';
+      document.getElementById('stopScanBtn').style.display = 'none';
+      return;
+    }
+    console.log("✅ Quagga 초기화 완료, 카메라 시작 중...");
+    Quagga.start();
+  });
+
+  Quagga.onDetected(function(result){
+    const code = result.codeResult.code;
+    if(code){
+      // 중복 스캔 방지
+      if(document.getElementById('scannerResult').getAttribute('data-code') === code) return;
+
+      document.getElementById('scannerResult').setAttribute('data-code', code);
+
+      // 스캔된 바코드로 장비 검색
+      const item = items.find(i => i.serial === code);
+
+      if(item){
+        document.getElementById('scannerResult').innerHTML = `
+          <div class="scanner-result">
+            ✅ 스캔 성공!
+          </div>
+          <div class="panel" style="margin:0;">
+            <div class="panel-head" style="border-bottom:1px solid var(--border);">
+              <h3 style="margin:0; font-size:14px;">📦 ${esc(item.model)}</h3>
+            </div>
+            <div class="detail-grid" style="font-size:13px; padding:12px 0;">
+              <div class="kv">
+                <div class="k">시리얼</div>
+                <div class="v">${esc(item.serial)}</div>
+              </div>
+              <div class="kv">
+                <div class="k">상태</div>
+                <div class="v">${statusBadge(item.status)}</div>
+              </div>
+              <div class="kv">
+                <div class="k">고객사</div>
+                <div class="v">${esc(item.customer || '-')}</div>
+              </div>
+              <div class="kv">
+                <div class="k">위치</div>
+                <div class="v">${esc(item.loc || '-')}</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="btn primary" style="width:100%;" onclick="stopBarcodeScanner(); openDetail('${item.id}'); closeBarcodeScanner();">상세보기</button>
+          </div>
+        `;
+      } else {
+        document.getElementById('scannerResult').innerHTML = `
+          <div class="scanner-result error">
+            ❌ 장비를 찾을 수 없습니다<br/>
+            <span style="font-size:11px; font-weight:400;">${code}</span>
+          </div>
+        `;
+      }
+
+      // 3초 후 계속 스캔
+      setTimeout(()=>{
+        document.getElementById('scannerResult').setAttribute('data-code', '');
+      }, 3000);
+    }
+  });
 }
 
-async function handleScanSuccess(decodedText){
-  const code=normalizeSerial(decodedText); if(!code) return;
-  const now=Date.now(); if(code===lastScannedCode && now-lastScanAt<2500) return;
-  lastScannedCode=code; lastScanAt=now;
-
-  // 스캔 즉시 카메라를 닫고 등록/수정 창으로 이동
-  const item=items.find(i=>normalizeSerial(i.serial)===code);
-  await stopBarcodeScanner();
-  closeBarcodeScanner();
-
-  if(item){
-    openRegisterModal(item.id);
-    toast('기존 장비가 확인되었습니다. 등록창에서 수정할 수 있습니다.');
-  }else{
-    openRegisterModal();
-    document.getElementById('f_serial').value=code;
-    toast('스캔한 시리얼번호를 등록창에 입력했습니다.');
-  }
-}
-
-async function stopBarcodeScanner(){
-  if(!barcodeScanning && !html5QrCode) return;
-  barcodeScanning=false;
-  try{if(html5QrCode && html5QrCode.isScanning) await html5QrCode.stop();}catch(e){}
-  try{html5QrCode && await html5QrCode.clear();}catch(e){}
-  html5QrCode=null;
-  document.getElementById('startScanBtn').style.display='block'; document.getElementById('stopScanBtn').style.display='none';
+function stopBarcodeScanner(){
+  if(!barcodeScanning) return;
+  barcodeScanning = false;
+  Quagga.stop();
+  Quagga.offDetected();
+  document.getElementById('startScanBtn').style.display = 'block';
+  document.getElementById('stopScanBtn').style.display = 'none';
+  document.getElementById('scannerResult').innerHTML = '<div class="scanner-info">스캔이 중지되었습니다</div>';
 }
 
 /* ================= init ================= */
+// Initialize users
 loginSystem.initUsers();
-const savedUser=localStorage.getItem('axgateUser');
-if(savedUser && loginSystem.users[savedUser]){
-  const user=loginSystem.users[savedUser]; loginSystem.isLoggedIn=true; loginSystem.currentUser=savedUser; loginSystem.userRole=user.role; loginSystem.isAdmin=(user.role===99);
-  document.getElementById('currentUsername').innerText=savedUser+' ('+ROLE_NAMES[user.role]+')';
-  document.getElementById('adminMenu').style.display=loginSystem.isAdmin?'block':'none'; closeLoginModal();
-}else{ openLoginModal(); }
 
-// 사용자가 만든 초기 관리자 설정 화면은 더 이상 사용하지 않습니다.
-document.getElementById('adminSetupOverlay').classList.remove('show');
+// Check login status
+const savedUser = localStorage.getItem('axgateUser');
+const hasUsers = Object.keys(loginSystem.users).length > 0;
 
-const cfg=getWorkerConfig();
-if(cfg.workerUrl){ gitHubState={...gitHubState,...cfg,isAuthed:true}; loadFromGitHubOnStart(false); }
-if(loginSystem.isLoggedIn){ document.querySelector('.side-item[data-view="dashboard"]').classList.add('active'); render(); }
+if(!hasUsers) {
+  // 기본 관리자 계정 자동 생성
+  console.log("✅ 기본 관리자 계정 자동 생성: jcube");
+  loginSystem.addUser('jcube', 'Jcube4681', 99);
 
-// Photo preview binding
-const photoInput=document.getElementById('f_photos');
-if(photoInput){ photoInput.addEventListener('change',async()=>{ const preview=document.getElementById('photoPreview'); preview.innerHTML=''; const files=[...photoInput.files].slice(0,3); for(const f of files){ const url=URL.createObjectURL(f); const img=document.createElement('img'); img.className='photo-thumb'; img.src=url; preview.appendChild(img); } }); }
+  // 자동 로그인
+  loginSystem.isLoggedIn = true;
+  loginSystem.currentUser = 'jcube';
+  loginSystem.userRole = 99;
+  loginSystem.isAdmin = true;
+  localStorage.setItem('axgateUser', 'jcube');
+  document.getElementById('currentUsername').innerText = 'jcube (관리자)';
+  document.getElementById('adminMenu').style.display = 'block';
 
-// PWA install support
-let deferredPwaPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPwaPrompt=e;document.querySelector('.install-pwa')?.classList.add('show');});
-async function installPWA(){ if(!deferredPwaPrompt){toast('브라우저 메뉴의 "홈 화면에 추가"를 사용하세요.');return;} deferredPwaPrompt.prompt(); await deferredPwaPrompt.userChoice; deferredPwaPrompt=null; }
-if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
+  // 모든 모달 닫기
+  document.getElementById('adminSetupOverlay').classList.remove('show');
+  document.getElementById('loginOverlay').classList.remove('show');
+  document.getElementById('appMain').style.display = 'block';
+  document.querySelector('.sidebar').style.display = 'block';
+  document.querySelector('.topbar').style.display = 'flex';
+
+  console.log("✅ jcube로 자동 로그인됨");
+} else if(savedUser && loginSystem.users[savedUser]){
+  const user = loginSystem.users[savedUser];
+  loginSystem.isLoggedIn = true;
+  loginSystem.currentUser = savedUser;
+  loginSystem.userRole = user.role;
+  loginSystem.isAdmin = (user.role === 99);
+  document.getElementById('currentUsername').innerText = savedUser + ' (' + ROLE_NAMES[user.role] + ')';
+
+  // Show admin menu if admin
+  if(loginSystem.isAdmin) {
+    document.getElementById('adminMenu').style.display = 'block';
+  } else {
+    document.getElementById('adminMenu').style.display = 'none';
+  }
+
+  closeLoginModal();
+} else {
+  openLoginModal();
+}
+
+// Restore GitHub auth state
+const savedGHToken = localStorage.getItem('githubToken');
+if(savedGHToken){
+  gitHubState.token = savedGHToken;
+  gitHubState.owner = localStorage.getItem('githubOwner');
+  gitHubState.repo = localStorage.getItem('githubRepo');
+  gitHubState.isAuthed = true;
+
+  // 페이지 로드 시 GitHub에서 자동으로 데이터 로드
+  loadFromGitHubOnStart();
+}
+
+if(loginSystem.isLoggedIn){
+  document.querySelector('.side-item[data-view="dashboard"]').classList.add("active");
+  render();
+}
 </script>
-<button class="btn primary install-pwa" onclick="installPWA()">📲 앱으로 설치</button>
 </body>
 </html>
